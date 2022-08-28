@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import ILogger from '../../Logger';
+import ILogger from '../../logger';
 import TransactionHistoryService from '../../services/transaction-history';
 
 export default class TransactionHistoryResolver {

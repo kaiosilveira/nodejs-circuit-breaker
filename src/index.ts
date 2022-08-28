@@ -1,18 +1,18 @@
 import * as http from 'http';
-import * as Express from 'express';
 import * as Path from 'path';
 import * as ChildProcess from 'child_process';
+import Express from 'express';
 
-import { ConsoleLogger } from './Logger';
-import CircuitBreaker from './CircuitBreaker';
-import GlobalConfig from './GlobalConfig';
+import { ConsoleLogger } from './logger';
+import CircuitBreaker from './circuit-breaker';
+import GlobalConfig from './global-config';
 import TransactionHistoryResolver from './resolvers/transaction-resolver';
 import FakeTransactionHistoryService from './services/transaction-history/fake';
 
 const PORT: Number = 3000;
 const app = Express();
 
-const LeakyBucket = ChildProcess.fork(`${Path.resolve(__dirname)}/LeakyBucket/process-definition`);
+const LeakyBucket = ChildProcess.fork(`${Path.resolve(__dirname)}/leaky-bucket/process-definition`);
 
 const globalConfig = new GlobalConfig();
 

@@ -1,9 +1,9 @@
 import { ChildProcess } from 'child_process';
 import { Request, Response } from 'express';
 
-import ILogger from '../Logger';
-import { LeakyBucketMessage } from '../LeakyBucket/types';
-import GlobalConfig from '../GlobalConfig';
+import ILogger from '../logger';
+import { LeakyBucketMessage } from '../leaky-bucket/types';
+import GlobalConfig from '../global-config';
 
 export enum CircuitBreakerStatus {
   CLOSED = 'closed',

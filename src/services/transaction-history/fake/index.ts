@@ -1,5 +1,5 @@
 import TransactionHistoryService from '..';
-import GlobalConfig from '../../../GlobalConfig';
+import GlobalConfig from '../../../global-config';
 
 export default class FakeTransactionHistoryService implements TransactionHistoryService {
   counter: number;
