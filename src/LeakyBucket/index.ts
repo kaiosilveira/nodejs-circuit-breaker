@@ -21,17 +21,17 @@ class LeakyBucket {
     threshold = DEFAULT_THRESHOLD,
   }: {
     subscriptionId: string;
-    threshold?: Number;
+    threshold?: number;
   }): void {
     if (subscriptionId === '') throw new Error('Invalid subscriptionId. Expected a string.');
     this.COUNTERS[subscriptionId] = { current: 0, threshold: threshold };
   }
 
-  fetchThresholdFor({ subscriptionId }: { subscriptionId: string }): Number {
+  fetchThresholdFor({ subscriptionId }: { subscriptionId: string }): number {
     return this.COUNTERS[subscriptionId].threshold;
   }
 
-  fetchCountFor({ subscriptionId }: { subscriptionId: string }): Number {
+  fetchCountFor({ subscriptionId }: { subscriptionId: string }): number {
     if (!this.isSubscriptionIdRegistered(subscriptionId))
       throw new SubscriptionIdNotRegisteredError();
 
