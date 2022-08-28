@@ -1,6 +1,6 @@
-import http from 'http';
-import Express from 'express';
-import Path from 'path';
+import * as http from 'http';
+import * as Express from 'express';
+import * as Path from 'path';
 import * as ChildProcess from 'child_process';
 
 import { ConsoleLogger } from './Logger';
