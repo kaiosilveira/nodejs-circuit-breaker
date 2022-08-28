@@ -13,7 +13,7 @@ export default class FakeTransactionHistoryService implements TransactionHistory
 
   async fetchTransactionHistory() {
     return new Promise((resolve, reject) => {
-      if (this.counter === 4 && !this.globalConfig.CB_OPEN) {
+      if (this.counter === 4 && !this.globalConfig.isCircuitBreakerOpen()) {
         this.counter = 1;
         reject({ msg: 'Service temporarily unavailable' });
       } else {
