@@ -187,8 +187,8 @@ describe('CircuitBreaker', () => {
       expect(next).toHaveBeenCalledTimes(1);
       expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
       expect(spyOnLoggerInfo).toHaveBeenCalledWith({
-        msg: 'Successful response while in a HALF_OPEN state. Circuit is now closed.',
-        status: CircuitBreakerStatus.CLOSED,
+        msg: 'Successful response while in a HALF_OPEN state. Closing the circuit.',
+        status: CircuitBreakerStatus.HALF_OPEN,
       });
     });
 
@@ -215,7 +215,7 @@ describe('CircuitBreaker', () => {
       expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
       expect(spyOnLoggerInfo).toHaveBeenCalledWith({
         msg: 'Failure response while in a HALF_OPEN state. Opening circuit.',
-        status: CircuitBreakerStatus.OPEN,
+        status: CircuitBreakerStatus.HALF_OPEN,
       });
 
       expect(spyOnBucketSend).toHaveBeenCalledWith({

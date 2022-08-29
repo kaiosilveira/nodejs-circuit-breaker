@@ -11,8 +11,8 @@ export default class CircuitBreakerHalfOpenState extends CircuitBreakerState {
   handleOkResponse(): void {
     this.circuitBreaker.close();
     this.logger.info({
-      msg: 'Successful response while in a HALF_OPEN state. Circuit is now closed.',
-      status: this.circuitBreaker._state,
+      msg: 'Successful response while in a HALF_OPEN state. Closing the circuit.',
+      status: this.status,
     });
   }
 
@@ -20,7 +20,7 @@ export default class CircuitBreakerHalfOpenState extends CircuitBreakerState {
     this.circuitBreaker.open();
     this.logger.info({
       msg: 'Failure response while in a HALF_OPEN state. Opening circuit.',
-      status: this.circuitBreaker._state,
+      status: this.status,
     });
 
     this.circuitBreaker.registerFailure();

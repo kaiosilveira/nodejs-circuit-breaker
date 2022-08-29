@@ -9,7 +9,7 @@ export default class CircuitBreakerClosedState extends CircuitBreakerState {
   }
 
   handleOkResponse(): void {
-    this.logger.info({ msg: 'Successful response', status: this.circuitBreaker._state });
+    this.logger.info({ msg: 'Successful response', status: this.status });
   }
 
   handleInternalServerErrorResponse(): void {

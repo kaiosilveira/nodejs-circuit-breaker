@@ -15,7 +15,6 @@ export default class CircuitBreaker {
   subscriptionId: string;
   logger: ILogger;
   bucket: ChildProcess;
-  _state: CircuitBreakerStatus;
   config: CircuitBreakerConfig;
   globalConfig: GlobalConfig;
   state: CircuitBreakerState;
@@ -36,7 +35,6 @@ export default class CircuitBreaker {
     this.logger = logger;
     this.globalConfig = globalConfig;
     this.subscriptionId = `${this.config.resourceName}-circuit-breaker`;
-    this._state = CircuitBreakerStatus.CLOSED;
     this.state = new CircuitBreakerClosedState({ circuitBreaker: this, logger: this.logger });
 
     this.monitor = this.monitor.bind(this);
@@ -51,7 +49,7 @@ export default class CircuitBreaker {
 
   monitor(_: Request, res: Response, next: Function): void | Response {
     if (this.state.status === CircuitBreakerStatus.OPEN) {
-      this.logger.info({ msg: 'Call refused from circuit breaker', status: this._state });
+      this.logger.info({ msg: 'Call refused from circuit breaker', status: this.state.status });
       return res.status(500).json({ msg: 'Call refused from circuit breaker' });
     }
 
@@ -74,19 +72,16 @@ export default class CircuitBreaker {
   close(): void {
     this.globalConfig.setCircuitBreakerOpen(false);
     this.state = new CircuitBreakerClosedState({ circuitBreaker: this, logger: this.logger });
-    this._state = CircuitBreakerStatus.CLOSED;
   }
 
   open(): void {
     this.globalConfig.setCircuitBreakerOpen(true);
     this.state = new CircuitBreakerOpenState({ circuitBreaker: this, logger: this.logger });
-    this._state = CircuitBreakerStatus.OPEN;
   }
 
   halfOpen(): void {
     this.globalConfig.setCircuitBreakerOpen(false);
     this.state = new CircuitBreakerHalfOpenState({ circuitBreaker: this, logger: this.logger });
-    this._state = CircuitBreakerStatus.HALF_OPEN;
   }
 
   registerFailure() {
@@ -106,7 +101,7 @@ export default class CircuitBreaker {
         this.halfOpen();
         this.logger.info({
           msg: 'Threshold restored. Moving circuit to half-open.',
-          status: this._state,
+          status: this.state.status,
         });
         break;
       default:
