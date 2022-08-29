@@ -13,10 +13,6 @@ export default class InMemoryApplicationState implements ApplicationState {
     return this.CIRCUIT_BREAKERS[circuitBreakerId];
   }
 
-  setCircuitBreakerState(circuitBreakerId: string, state: CircuitBreakerStatus): void {
-    this.CIRCUIT_BREAKERS[circuitBreakerId] = state;
-  }
-
   registerCircuitBreaker(circuitBreaker: CircuitBreaker): void {
     this.CIRCUIT_BREAKERS[circuitBreaker.getIdentifier()] = circuitBreaker.getStatus();
     circuitBreaker.on(CircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, data => {

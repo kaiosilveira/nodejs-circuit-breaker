@@ -15,10 +15,6 @@ export default class FakeApplicationState implements ApplicationState {
     return this.circuitBreakerStates[circuitBreakerId];
   }
 
-  setCircuitBreakerState(circuitBreakerId: string, state: CircuitBreakerStatus): void {
-    this.circuitBreakerStates[circuitBreakerId] = state;
-  }
-
   isCircuitBreakerOpen(): boolean {
     return false;
   }
