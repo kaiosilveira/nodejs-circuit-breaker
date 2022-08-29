@@ -4,76 +4,11 @@ import { Request, Response } from 'express';
 import ILogger from '../monitoring/logger';
 import { LeakyBucketMessage } from '../leaky-bucket/types';
 import GlobalConfig from '../global-config';
-
-export enum CircuitBreakerStatus {
-  CLOSED = 'closed',
-  OPEN = 'open',
-  HALF_OPEN = 'half_open',
-}
-
-interface CircuitBreakerState {
-  handleOkResponse(): void;
-  handleInternalServerErrorResponse(): void;
-}
-
-class CircuitBreakerClosedState implements CircuitBreakerState {
-  logger: ILogger;
-  circuitBreaker: CircuitBreaker;
-
-  constructor({ circuitBreaker, logger }: { circuitBreaker: CircuitBreaker; logger: ILogger }) {
-    this.logger = logger;
-    this.circuitBreaker = circuitBreaker;
-  }
-
-  handleOkResponse(): void {
-    this.logger.info({ msg: 'Successful response', status: this.circuitBreaker._state });
-  }
-
-  handleInternalServerErrorResponse(): void {
-    this.circuitBreaker.registerFailure();
-  }
-}
-
-class CircuitBreakerHalfOpenState implements CircuitBreakerState {
-  circuitBreaker: CircuitBreaker;
-  logger: ILogger;
-
-  constructor({ circuitBreaker, logger }: { circuitBreaker: CircuitBreaker; logger: ILogger }) {
-    this.circuitBreaker = circuitBreaker;
-    this.logger = logger;
-  }
-
-  handleOkResponse(): void {
-    this.circuitBreaker.close();
-    this.logger.info({
-      msg: 'Successful response while in a HALF_OPEN state. Circuit is now closed.',
-      status: this.circuitBreaker._state,
-    });
-  }
-
-  handleInternalServerErrorResponse(): void {
-    this.circuitBreaker.open();
-    this.logger.info({
-      msg: 'Failure response while in a HALF_OPEN state. Opening circuit.',
-      status: this.circuitBreaker._state,
-    });
-
-    this.circuitBreaker.registerFailure();
-  }
-}
-
-class CircuitBreakerOpenState implements CircuitBreakerState {
-  circuitBreaker: CircuitBreaker;
-  constructor({ circuitBreaker }: { circuitBreaker: CircuitBreaker }) {
-    this.circuitBreaker = circuitBreaker;
-  }
-
-  handleOkResponse(): void {}
-
-  handleInternalServerErrorResponse(): void {
-    this.circuitBreaker.registerFailure();
-  }
-}
+import CircuitBreakerState from './state';
+import CircuitBreakerClosedState from './state/closed';
+import CircuitBreakerHalfOpenState from './state/half-open';
+import CircuitBreakerOpenState from './state/open';
+import { CircuitBreakerStatus } from './status';
 
 export type CircuitBreakerConfig = { resourceName: string; threshold: number };
 export default class CircuitBreaker {
@@ -115,7 +50,7 @@ export default class CircuitBreaker {
   }
 
   monitor(_: Request, res: Response, next: Function): void | Response {
-    if (this._state === CircuitBreakerStatus.OPEN) {
+    if (this.state.status === CircuitBreakerStatus.OPEN) {
       this.logger.info({ msg: 'Call refused from circuit breaker', status: this._state });
       return res.status(500).json({ msg: 'Call refused from circuit breaker' });
     }
@@ -144,7 +79,7 @@ export default class CircuitBreaker {
 
   open(): void {
     this.globalConfig.setCircuitBreakerOpen(true);
-    this.state = new CircuitBreakerOpenState({ circuitBreaker: this });
+    this.state = new CircuitBreakerOpenState({ circuitBreaker: this, logger: this.logger });
     this._state = CircuitBreakerStatus.OPEN;
   }
 

@@ -2,9 +2,10 @@ import { ChildProcess } from 'child_process';
 import EventEmitter from 'events';
 import { Request, Response } from 'express';
 
-import CircuitBreaker, { CircuitBreakerStatus } from '.';
+import CircuitBreaker from '.';
 import GlobalConfig from '../global-config';
 import ILogger from '../monitoring/logger';
+import { CircuitBreakerStatus } from './status';
 
 class FakeChildProcess extends ChildProcess {
   send() {
@@ -123,7 +124,7 @@ describe('CircuitBreaker', () => {
         config: { resourceName: 'transaction-history', threshold },
       });
 
-      cb.setState(CircuitBreakerStatus.OPEN);
+      cb.open();
 
       const req = {} as Request;
       const res = new FakeExpressResponse() as unknown as Response;
@@ -149,7 +150,7 @@ describe('CircuitBreaker', () => {
         config: { resourceName: 'transaction-history', threshold },
       });
 
-      cb.setState(CircuitBreakerStatus.CLOSED);
+      cb.close();
 
       const req = {} as Request;
       const res = new FakeExpressResponse() as unknown as Response;
