@@ -106,7 +106,7 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
     } as LeakyBucketMessage);
   }
 
-  private _handleBucketMessage(msg: LeakyBucketMessage) {
+  private _handleBucketMessage(msg: LeakyBucketMessage): void {
     switch (msg.type) {
       case 'THRESHOLD_VIOLATION':
         this.logger.info({ msg: 'Threshold violated. Opening circuit.' });
