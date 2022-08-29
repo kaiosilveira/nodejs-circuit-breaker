@@ -24,6 +24,8 @@ class FakeGlobalConfig implements GlobalConfig {
     this.CB_OPEN = false;
   }
 
+  setCircuitBreakerState(circuitBreakerId: string, state: CircuitBreakerStatus): void {}
+
   isCircuitBreakerOpen(): boolean {
     return false;
   }

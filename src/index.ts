@@ -6,9 +6,9 @@ import Express from 'express';
 import { ConsoleLogger } from './monitoring/logger';
 
 import ExpressCircuitBreaker from './circuit-breaker/express';
-import { InMemoryGlobalConfig } from './global-config';
 import TransactionHistoryResolver from './resolvers/transaction-resolver';
 import FakeTransactionHistoryService from './services/transaction-history/fake';
+import InMemoryGlobalConfig from './global-config/in-memory';
 
 const PORT: Number = 3000;
 const app = Express();
