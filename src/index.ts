@@ -21,7 +21,6 @@ const circuitBreaker = new ExpressCircuitBreaker({
   bucket: LeakyBucket,
   logger: new ConsoleLogger(),
   config: { resourceName: 'transaction-history', threshold: 10 },
-  applicationState,
 });
 
 applicationState.registerCircuitBreaker(circuitBreaker);

@@ -16,7 +16,6 @@ export type ExpressCircuitBreakerProps = {
   bucket: ChildProcess;
   logger: ILogger;
   config: ExpressCircuitBreakerConfig;
-  applicationState: ApplicationState;
 };
 
 export default class ExpressCircuitBreaker extends EventEmitter implements CircuitBreaker {
@@ -24,15 +23,13 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
   logger: ILogger;
   bucket: ChildProcess;
   config: ExpressCircuitBreakerConfig;
-  applicationState: ApplicationState;
   state: CircuitBreakerState;
 
-  constructor({ bucket, logger, config, applicationState }: ExpressCircuitBreakerProps) {
+  constructor({ bucket, logger, config }: ExpressCircuitBreakerProps) {
     super();
     this.config = config;
     this.bucket = bucket;
     this.logger = logger;
-    this.applicationState = applicationState;
     this.subscriptionId = `${this.config.resourceName}-circuit-breaker`;
     this.state = new CircuitBreakerClosedState({ circuitBreaker: this, logger: this.logger });
 
@@ -79,36 +76,27 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
   }
 
   close(): void {
+    this.state = new CircuitBreakerClosedState({ circuitBreaker: this, logger: this.logger });
     this.emit(CircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
       circuitBreakerId: this.subscriptionId,
       newState: CircuitBreakerStatus.CLOSED,
     });
-
-    this.applicationState.setCircuitBreakerState(this.subscriptionId, CircuitBreakerStatus.CLOSED);
-    this.state = new CircuitBreakerClosedState({ circuitBreaker: this, logger: this.logger });
   }
 
   open(): void {
+    this.state = new CircuitBreakerOpenState({ circuitBreaker: this, logger: this.logger });
     this.emit(CircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
       circuitBreakerId: this.subscriptionId,
       newState: CircuitBreakerStatus.OPEN,
     });
-
-    this.applicationState.setCircuitBreakerState(this.subscriptionId, CircuitBreakerStatus.OPEN);
-    this.state = new CircuitBreakerOpenState({ circuitBreaker: this, logger: this.logger });
   }
 
   halfOpen(): void {
+    this.state = new CircuitBreakerHalfOpenState({ circuitBreaker: this, logger: this.logger });
     this.emit(CircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
       circuitBreakerId: this.subscriptionId,
       newState: CircuitBreakerStatus.HALF_OPEN,
     });
-
-    this.applicationState.setCircuitBreakerState(
-      this.subscriptionId,
-      CircuitBreakerStatus.HALF_OPEN
-    );
-    this.state = new CircuitBreakerHalfOpenState({ circuitBreaker: this, logger: this.logger });
   }
 
   registerFailure() {

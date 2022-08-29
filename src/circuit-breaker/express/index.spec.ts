@@ -5,7 +5,6 @@ import { CircuitBreakerEvents } from '..';
 import FakeChildProcess from '../../../test/fakes/nodejs/child-process/fake';
 import FakeLogger from '../../monitoring/logger/fake';
 import { CircuitBreakerStatus } from '../status';
-import FakeApplicationState from '../../application-state/fake';
 import FakeExpressResponse from '../../../test/fakes/express/http/response/fake';
 
 describe('CircuitBreaker', () => {
@@ -13,7 +12,6 @@ describe('CircuitBreaker', () => {
   const subscriptionId = 'transaction-history-circuit-breaker';
   const bucket = new FakeChildProcess();
   const logger = new FakeLogger();
-  const applicationState = new FakeApplicationState();
   const next = jest.fn();
 
   afterEach(() => {
@@ -26,10 +24,9 @@ describe('CircuitBreaker', () => {
       const spyOnSend = jest.spyOn(bucket, 'send');
 
       new ExpressCircuitBreaker({
+        config: { resourceName: 'transaction-history', threshold },
         bucket,
         logger,
-        applicationState: applicationState,
-        config: { resourceName: 'transaction-history', threshold },
       });
 
       expect(spyOnSend).toHaveBeenCalledTimes(1);
@@ -43,10 +40,9 @@ describe('CircuitBreaker', () => {
       const spyOnOn = jest.spyOn(bucket, 'on');
 
       new ExpressCircuitBreaker({
+        config: { resourceName: 'transaction-history', threshold },
         bucket,
         logger,
-        applicationState: applicationState,
-        config: { resourceName: 'transaction-history', threshold },
       });
 
       expect(spyOnOn).toHaveBeenCalledTimes(1);
@@ -58,7 +54,6 @@ describe('CircuitBreaker', () => {
     const threshold = 10;
     const bucket = new FakeChildProcess();
     const logger = new FakeLogger();
-    const applicationState = new FakeApplicationState();
 
     afterEach(() => {
       jest.restoreAllMocks();
@@ -68,13 +63,11 @@ describe('CircuitBreaker', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
 
       const circuitBreaker = new ExpressCircuitBreaker({
+        config: { resourceName: 'transaction-history', threshold },
         bucket,
         logger,
-        applicationState,
-        config: { resourceName: 'transaction-history', threshold },
       });
 
-      const spyOnSetCircuitBreakerState = jest.spyOn(applicationState, 'setCircuitBreakerState');
       const spyOnEmit = jest.spyOn(circuitBreaker, 'emit');
       circuitBreaker.open();
 
@@ -90,11 +83,6 @@ describe('CircuitBreaker', () => {
         newState: CircuitBreakerStatus.OPEN,
       });
 
-      expect(spyOnSetCircuitBreakerState).toHaveBeenCalledWith(
-        circuitBreaker.subscriptionId,
-        CircuitBreakerStatus.OPEN
-      );
-
       expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
       expect(spyOnLoggerInfo).toHaveBeenCalledWith({
         msg: 'Call refused from circuit breaker',
@@ -104,13 +92,11 @@ describe('CircuitBreaker', () => {
 
     it('should register success 200 OK response when the state is CLOSED', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
-      const spyOnSetCircuitBreakerState = jest.spyOn(applicationState, 'setCircuitBreakerState');
 
       const cb = new ExpressCircuitBreaker({
+        config: { resourceName: 'transaction-history', threshold },
         bucket,
         logger,
-        applicationState: applicationState,
-        config: { resourceName: 'transaction-history', threshold },
       });
 
       cb.close();
@@ -122,11 +108,6 @@ describe('CircuitBreaker', () => {
       res.emit('finish');
 
       expect(next).toHaveBeenCalledTimes(1);
-      expect(spyOnSetCircuitBreakerState).toHaveBeenCalledWith(
-        'transaction-history-circuit-breaker',
-        CircuitBreakerStatus.CLOSED
-      );
-
       expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
       expect(spyOnLoggerInfo).toHaveBeenCalledWith({
         msg: 'Successful response',
@@ -136,13 +117,11 @@ describe('CircuitBreaker', () => {
 
     it('should close the circuit again if response has status 200 OK and circuit is at HALF_OPEN', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
-      const spyOnSetCircuitBreakerState = jest.spyOn(applicationState, 'setCircuitBreakerState');
 
       const circuitBreaker = new ExpressCircuitBreaker({
+        config: { resourceName: 'transaction-history', threshold },
         bucket,
         logger,
-        applicationState: applicationState,
-        config: { resourceName: 'transaction-history', threshold },
       });
 
       circuitBreaker.halfOpen();
@@ -160,11 +139,6 @@ describe('CircuitBreaker', () => {
       });
 
       expect(next).toHaveBeenCalledTimes(1);
-      expect(spyOnSetCircuitBreakerState).toHaveBeenCalledWith(
-        circuitBreaker.subscriptionId,
-        CircuitBreakerStatus.CLOSED
-      );
-
       expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
       expect(spyOnLoggerInfo).toHaveBeenCalledWith({
         msg: 'Successful response while in a HALF_OPEN state. Closing the circuit.',
@@ -175,13 +149,11 @@ describe('CircuitBreaker', () => {
     it('should open the circuit again if response 500 INTERNAL SERVER ERROR and circuit is at HALF_OPEN', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
       const spyOnBucketSend = jest.spyOn(bucket, 'send');
-      const spyOnSetCircuitBreakerState = jest.spyOn(applicationState, 'setCircuitBreakerState');
 
       const circuitBreaker = new ExpressCircuitBreaker({
+        config: { resourceName: 'transaction-history', threshold },
         bucket,
         logger,
-        applicationState: applicationState,
-        config: { resourceName: 'transaction-history', threshold },
       });
 
       circuitBreaker.halfOpen();
@@ -197,11 +169,6 @@ describe('CircuitBreaker', () => {
         circuitBreakerId: circuitBreaker.subscriptionId,
         newState: CircuitBreakerStatus.OPEN,
       });
-
-      expect(spyOnSetCircuitBreakerState).toHaveBeenCalledWith(
-        circuitBreaker.subscriptionId,
-        CircuitBreakerStatus.OPEN
-      );
 
       expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
       expect(spyOnLoggerInfo).toHaveBeenCalledWith({
@@ -220,10 +187,9 @@ describe('CircuitBreaker', () => {
     describe('THRESHOLD_VIOLATION', () => {
       it('should open the state', () => {
         const circuitBreaker = new ExpressCircuitBreaker({
+          config: { resourceName: 'transaction-history', threshold: 10 },
           bucket,
           logger,
-          applicationState,
-          config: { resourceName: 'transaction-history', threshold: 10 },
         });
 
         const spyOnOpen = jest.spyOn(circuitBreaker, 'open');
@@ -242,10 +208,9 @@ describe('CircuitBreaker', () => {
     describe('THRESHOLD_RESTORED', () => {
       it('should move to HALF_OPEN state', () => {
         const circuitBreaker = new ExpressCircuitBreaker({
+          config: { resourceName: 'transaction-history', threshold: 10 },
           bucket,
           logger,
-          applicationState,
-          config: { resourceName: 'transaction-history', threshold: 10 },
         });
 
         circuitBreaker.open();
