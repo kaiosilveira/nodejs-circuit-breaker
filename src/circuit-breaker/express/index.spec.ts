@@ -7,12 +7,25 @@ import GlobalConfig from '../../application-state';
 import FakeLogger from '../../monitoring/logger/fake';
 import { CircuitBreakerStatus } from '../status';
 
+type LooseObject = {
+  [key: string]: Function;
+};
+
 class FakeChildProcess extends ChildProcess {
-  send() {
+  _callbacks: LooseObject;
+
+  constructor() {
+    super();
+    this._callbacks = {};
+  }
+
+  send(message) {
+    Object.values(this._callbacks).map(cb => cb(message));
     return true;
   }
 
-  on() {
+  on(event: string, callback: Function) {
+    this._callbacks[event] = callback;
     return this;
   }
 }
@@ -66,7 +79,7 @@ describe('CircuitBreaker', () => {
   const subscriptionId = 'transaction-history-circuit-breaker';
   const bucket = new FakeChildProcess();
   const logger = new FakeLogger();
-  const globalConfig = new FakeGlobalConfig();
+  const applicationState = new FakeGlobalConfig();
   const next = jest.fn();
 
   afterEach(() => {
@@ -81,7 +94,7 @@ describe('CircuitBreaker', () => {
       new ExpressCircuitBreaker({
         bucket,
         logger,
-        applicationState: globalConfig,
+        applicationState: applicationState,
         config: { resourceName: 'transaction-history', threshold },
       });
 
@@ -98,7 +111,7 @@ describe('CircuitBreaker', () => {
       new ExpressCircuitBreaker({
         bucket,
         logger,
-        applicationState: globalConfig,
+        applicationState: applicationState,
         config: { resourceName: 'transaction-history', threshold },
       });
 
@@ -248,6 +261,55 @@ describe('CircuitBreaker', () => {
       expect(spyOnBucketSend).toHaveBeenCalledWith({
         type: 'NEW_FAILURE',
         payload: { subscriptionId },
+      });
+    });
+  });
+
+  describe('Leaky bucket events', () => {
+    describe('THRESHOLD_VIOLATION', () => {
+      it('should open the state', () => {
+        const circuitBreaker = new ExpressCircuitBreaker({
+          bucket,
+          logger,
+          applicationState,
+          config: { resourceName: 'transaction-history', threshold: 10 },
+        });
+
+        const spyOnOpen = jest.spyOn(circuitBreaker, 'open');
+        const spyOnLoggerInfo = jest.spyOn(logger, 'info');
+
+        bucket.send({ type: 'THRESHOLD_VIOLATION' });
+
+        expect(spyOnOpen).toHaveBeenCalledTimes(1);
+        expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
+        expect(spyOnLoggerInfo).toHaveBeenCalledWith({
+          msg: 'Threshold violated. Opening circuit.',
+        });
+      });
+    });
+
+    describe('THRESHOLD_RESTORED', () => {
+      it('should move to HALF_OPEN state', () => {
+        const circuitBreaker = new ExpressCircuitBreaker({
+          bucket,
+          logger,
+          applicationState,
+          config: { resourceName: 'transaction-history', threshold: 10 },
+        });
+
+        circuitBreaker.open();
+
+        const spyOnHalfOpen = jest.spyOn(circuitBreaker, 'halfOpen');
+        const spyOnLoggerInfo = jest.spyOn(logger, 'info');
+
+        bucket.send({ type: 'THRESHOLD_RESTORED' });
+
+        expect(spyOnHalfOpen).toHaveBeenCalledTimes(1);
+        expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
+        expect(spyOnLoggerInfo).toHaveBeenCalledWith({
+          msg: 'Threshold restored. Moving circuit to half-open.',
+          status: CircuitBreakerStatus.HALF_OPEN,
+        });
       });
     });
   });
