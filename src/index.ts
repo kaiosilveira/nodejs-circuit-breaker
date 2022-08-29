@@ -24,6 +24,8 @@ const circuitBreaker = new ExpressCircuitBreaker({
   applicationState,
 });
 
+applicationState.registerCircuitBreaker(circuitBreaker);
+
 const transactionHistoryResolver = new TransactionHistoryResolver({
   logger: new ConsoleLogger(),
   transactionHistoryService: new FakeTransactionHistoryService({ globalConfig: applicationState }),

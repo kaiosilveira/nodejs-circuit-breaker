@@ -1,7 +1,7 @@
 import { ChildProcess } from 'child_process';
 import EventEmitter from 'events';
 import { Request, Response } from 'express';
-import CircuitBreaker from '..';
+import CircuitBreaker, { CircuitBreakerEvents } from '..';
 import ApplicationState from '../../application-state';
 import { LeakyBucketMessage } from '../../leaky-bucket/types';
 import ILogger from '../../monitoring/logger';
@@ -10,10 +10,6 @@ import CircuitBreakerClosedState from '../state/closed';
 import CircuitBreakerHalfOpenState from '../state/half-open';
 import CircuitBreakerOpenState from '../state/open';
 import { CircuitBreakerStatus } from '../status';
-
-export enum ExpressCircuitBreakerEvents {
-  CIRCUIT_BREAKER_STATE_UPDATED = 'CIRCUIT_BREAKER_STATE_UPDATED',
-}
 
 export type ExpressCircuitBreakerConfig = { resourceName: string; threshold: number };
 export type ExpressCircuitBreakerProps = {
@@ -52,6 +48,14 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
     this._setupLeakyBucket();
   }
 
+  getStatus(): CircuitBreakerStatus {
+    return this.state.status;
+  }
+
+  getIdentifier() {
+    return this.subscriptionId;
+  }
+
   monitor(_: Request, res: Response, next: Function): void | Response {
     if (this.state.status === CircuitBreakerStatus.OPEN) {
       this.logger.info({ msg: 'Call refused from circuit breaker', status: this.state.status });
@@ -75,7 +79,7 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
   }
 
   close(): void {
-    this.emit(ExpressCircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
+    this.emit(CircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
       circuitBreakerId: this.subscriptionId,
       newState: CircuitBreakerStatus.CLOSED,
     });
@@ -85,7 +89,7 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
   }
 
   open(): void {
-    this.emit(ExpressCircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
+    this.emit(CircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
       circuitBreakerId: this.subscriptionId,
       newState: CircuitBreakerStatus.OPEN,
     });
@@ -95,7 +99,7 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
   }
 
   halfOpen(): void {
-    this.emit(ExpressCircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
+    this.emit(CircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
       circuitBreakerId: this.subscriptionId,
       newState: CircuitBreakerStatus.HALF_OPEN,
     });

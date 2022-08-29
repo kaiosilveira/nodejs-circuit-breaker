@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 
-import ExpressCircuitBreaker, { ExpressCircuitBreakerEvents } from '.';
+import ExpressCircuitBreaker from '.';
+import { CircuitBreakerEvents } from '..';
 import FakeChildProcess from '../../../test/fakes/nodejs/child-process/fake';
 import FakeLogger from '../../monitoring/logger/fake';
 import { CircuitBreakerStatus } from '../status';
@@ -256,13 +257,10 @@ describe('CircuitBreaker', () => {
         bucket.send({ type: 'THRESHOLD_RESTORED' });
 
         expect(spyOnEmit).toHaveBeenCalledTimes(1);
-        expect(spyOnEmit).toHaveBeenCalledWith(
-          ExpressCircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED,
-          {
-            circuitBreakerId: circuitBreaker.subscriptionId,
-            newState: CircuitBreakerStatus.HALF_OPEN,
-          }
-        );
+        expect(spyOnEmit).toHaveBeenCalledWith(CircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
+          circuitBreakerId: circuitBreaker.subscriptionId,
+          newState: CircuitBreakerStatus.HALF_OPEN,
+        });
 
         expect(spyOnHalfOpen).toHaveBeenCalledTimes(1);
         expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);

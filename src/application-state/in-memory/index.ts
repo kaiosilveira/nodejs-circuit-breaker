@@ -1,4 +1,5 @@
 import ApplicationState from '..';
+import CircuitBreaker, { CircuitBreakerEvents } from '../../circuit-breaker';
 import { CircuitBreakerStatus } from '../../circuit-breaker/status';
 
 export default class InMemoryApplicationState implements ApplicationState {
@@ -14,5 +15,12 @@ export default class InMemoryApplicationState implements ApplicationState {
 
   setCircuitBreakerState(circuitBreakerId: string, state: CircuitBreakerStatus): void {
     this.CIRCUIT_BREAKERS[circuitBreakerId] = state;
+  }
+
+  registerCircuitBreaker(circuitBreaker: CircuitBreaker): void {
+    this.CIRCUIT_BREAKERS[circuitBreaker.getIdentifier()] = circuitBreaker.getStatus();
+    circuitBreaker.on(CircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, data => {
+      this.CIRCUIT_BREAKERS[data.circuitBreakerId] = data.newState;
+    });
   }
 }
