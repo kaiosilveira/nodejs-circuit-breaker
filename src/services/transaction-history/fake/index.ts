@@ -2,13 +2,14 @@ import TransactionHistoryService from '..';
 import { CircuitBreakerStatus } from '../../../circuit-breaker/status';
 import ApplicationState from '../../../application-state';
 
+export type FakeTransactionHistoryServiceProps = { applicationState: ApplicationState };
 export default class FakeTransactionHistoryService implements TransactionHistoryService {
   counter: number;
-  globalConfig: ApplicationState;
+  applicationState: ApplicationState;
 
-  constructor({ globalConfig }: { globalConfig: ApplicationState }) {
+  constructor({ applicationState }: FakeTransactionHistoryServiceProps) {
     this.counter = 1;
-    this.globalConfig = globalConfig;
+    this.applicationState = applicationState;
     this.fetchTransactionHistory = this.fetchTransactionHistory.bind(this);
   }
 
@@ -16,7 +17,7 @@ export default class FakeTransactionHistoryService implements TransactionHistory
     return new Promise((resolve, reject) => {
       if (
         this.counter === 4 &&
-        this.globalConfig.fetchCircuitBreakerState('transaction-history-circuit-breaker') !==
+        this.applicationState.fetchCircuitBreakerState('transaction-history-circuit-breaker') !==
           CircuitBreakerStatus.OPEN
       ) {
         this.counter = 1;
