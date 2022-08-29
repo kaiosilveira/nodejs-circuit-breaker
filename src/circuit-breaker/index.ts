@@ -10,12 +10,19 @@ import CircuitBreakerHalfOpenState from './state/half-open';
 import CircuitBreakerOpenState from './state/open';
 import { CircuitBreakerStatus } from './status';
 
-export type CircuitBreakerConfig = { resourceName: string; threshold: number };
-export default class CircuitBreaker {
+export default interface CircuitBreaker {
+  open(): void;
+  halfOpen(): void;
+  close(): void;
+  registerFailure(): void;
+}
+
+export type ExpressCircuitBreakerConfig = { resourceName: string; threshold: number };
+export class ExpressCircuitBreaker {
   subscriptionId: string;
   logger: ILogger;
   bucket: ChildProcess;
-  config: CircuitBreakerConfig;
+  config: ExpressCircuitBreakerConfig;
   globalConfig: GlobalConfig;
   state: CircuitBreakerState;
 
@@ -27,7 +34,7 @@ export default class CircuitBreaker {
   }: {
     bucket: ChildProcess;
     logger: ILogger;
-    config: CircuitBreakerConfig;
+    config: ExpressCircuitBreakerConfig;
     globalConfig: GlobalConfig;
   }) {
     this.config = config;
@@ -39,6 +46,8 @@ export default class CircuitBreaker {
 
     this.monitor = this.monitor.bind(this);
     this.close = this.close.bind(this);
+    this.open = this.open.bind(this);
+    this.halfOpen = this.halfOpen.bind(this);
     this.registerFailure = this.registerFailure.bind(this);
 
     this._setupLeakyBucket = this._setupLeakyBucket.bind(this);

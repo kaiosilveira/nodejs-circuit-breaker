@@ -4,7 +4,7 @@ import * as ChildProcess from 'child_process';
 import Express from 'express';
 
 import { ConsoleLogger } from './monitoring/logger';
-import CircuitBreaker from './circuit-breaker';
+import { ExpressCircuitBreaker } from './circuit-breaker';
 import { InMemoryGlobalConfig } from './global-config';
 import TransactionHistoryResolver from './resolvers/transaction-resolver';
 import FakeTransactionHistoryService from './services/transaction-history/fake';
@@ -16,7 +16,7 @@ const LeakyBucket = ChildProcess.fork(`${Path.resolve(__dirname)}/leaky-bucket/p
 
 const globalConfig = new InMemoryGlobalConfig();
 
-const circuitBreaker = new CircuitBreaker({
+const circuitBreaker = new ExpressCircuitBreaker({
   bucket: LeakyBucket,
   logger: new ConsoleLogger(),
   config: { resourceName: 'transaction-history', threshold: 10 },

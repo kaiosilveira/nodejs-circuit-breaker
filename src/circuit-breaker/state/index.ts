@@ -1,18 +1,18 @@
-import CircuitBreaker from '..';
+import ExpressCircuitBreaker from '..';
 import ILogger from '../../monitoring/logger';
 import { CircuitBreakerStatus } from '../status';
 
 export default abstract class CircuitBreakerState {
   status: CircuitBreakerStatus;
   logger: ILogger;
-  circuitBreaker: CircuitBreaker;
+  circuitBreaker: ExpressCircuitBreaker;
 
   constructor({
     circuitBreaker,
     logger,
     status,
   }: {
-    circuitBreaker: CircuitBreaker;
+    circuitBreaker: ExpressCircuitBreaker;
     logger: ILogger;
     status: CircuitBreakerStatus;
   }) {

@@ -2,9 +2,9 @@ import { ChildProcess } from 'child_process';
 import EventEmitter from 'events';
 import { Request, Response } from 'express';
 
-import CircuitBreaker from '.';
+import { ExpressCircuitBreaker } from '.';
 import GlobalConfig from '../global-config';
-import ILogger from '../monitoring/logger';
+import FakeLogger from '../monitoring/logger/fake';
 import { CircuitBreakerStatus } from './status';
 
 class FakeChildProcess extends ChildProcess {
@@ -15,11 +15,6 @@ class FakeChildProcess extends ChildProcess {
   on() {
     return this;
   }
-}
-
-class FakeLogger implements ILogger {
-  info(obj: any): void {}
-  error(obj: any): void {}
 }
 
 class FakeGlobalConfig implements GlobalConfig {
@@ -75,7 +70,7 @@ describe('CircuitBreaker', () => {
     it('should register itself with the LeakyBucket', () => {
       const spyOnSend = jest.spyOn(bucket, 'send');
 
-      new CircuitBreaker({
+      new ExpressCircuitBreaker({
         bucket,
         logger,
         globalConfig,
@@ -92,7 +87,7 @@ describe('CircuitBreaker', () => {
     it('should register message listeners on the LeakyBucket', () => {
       const spyOnOn = jest.spyOn(bucket, 'on');
 
-      new CircuitBreaker({
+      new ExpressCircuitBreaker({
         bucket,
         logger,
         globalConfig,
@@ -117,7 +112,7 @@ describe('CircuitBreaker', () => {
     it('should return INTERNAL_SERVER_ERROR 500 if state is OPEN', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
 
-      const cb = new CircuitBreaker({
+      const cb = new ExpressCircuitBreaker({
         bucket,
         logger,
         globalConfig,
@@ -143,7 +138,7 @@ describe('CircuitBreaker', () => {
     it('should register success 200 OK response when the state is CLOSED', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
 
-      const cb = new CircuitBreaker({
+      const cb = new ExpressCircuitBreaker({
         bucket,
         logger,
         globalConfig,
@@ -169,7 +164,7 @@ describe('CircuitBreaker', () => {
     it('should close the circuit again if response has status 200 OK and circuit is at HALF_OPEN', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
 
-      const cb = new CircuitBreaker({
+      const cb = new ExpressCircuitBreaker({
         bucket,
         logger,
         globalConfig,
@@ -196,7 +191,7 @@ describe('CircuitBreaker', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
       const spyOnBucketSend = jest.spyOn(bucket, 'send');
 
-      const cb = new CircuitBreaker({
+      const cb = new ExpressCircuitBreaker({
         bucket,
         logger,
         globalConfig,
