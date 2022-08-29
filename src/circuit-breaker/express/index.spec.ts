@@ -2,10 +2,10 @@ import { ChildProcess } from 'child_process';
 import EventEmitter from 'events';
 import { Request, Response } from 'express';
 
-import { ExpressCircuitBreaker } from '.';
-import GlobalConfig from '../global-config';
-import FakeLogger from '../monitoring/logger/fake';
-import { CircuitBreakerStatus } from './status';
+import ExpressCircuitBreaker from '.';
+import GlobalConfig from '../../global-config';
+import FakeLogger from '../../monitoring/logger/fake';
+import { CircuitBreakerStatus } from '../status';
 
 class FakeChildProcess extends ChildProcess {
   send() {
