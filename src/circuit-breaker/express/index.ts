@@ -1,5 +1,7 @@
 import { ChildProcess } from 'child_process';
+import EventEmitter from 'events';
 import { Request, Response } from 'express';
+import CircuitBreaker from '..';
 import ApplicationState from '../../application-state';
 import { LeakyBucketMessage } from '../../leaky-bucket/types';
 import ILogger from '../../monitoring/logger';
@@ -17,7 +19,7 @@ export type ExpressCircuitBreakerProps = {
   applicationState: ApplicationState;
 };
 
-export default class ExpressCircuitBreaker {
+export default class ExpressCircuitBreaker extends EventEmitter implements CircuitBreaker {
   subscriptionId: string;
   logger: ILogger;
   bucket: ChildProcess;
@@ -26,6 +28,7 @@ export default class ExpressCircuitBreaker {
   state: CircuitBreakerState;
 
   constructor({ bucket, logger, config, applicationState }: ExpressCircuitBreakerProps) {
+    super();
     this.config = config;
     this.bucket = bucket;
     this.logger = logger;
@@ -68,11 +71,21 @@ export default class ExpressCircuitBreaker {
   }
 
   close(): void {
+    this.emit('CIRCUIT_BREAKER_STATE_UPDATED', {
+      circuitBreakerId: `transaction-history-circuit-breaker`,
+      newState: CircuitBreakerStatus.CLOSED,
+    });
+
     this.applicationState.setCircuitBreakerState(this.subscriptionId, CircuitBreakerStatus.CLOSED);
     this.state = new CircuitBreakerClosedState({ circuitBreaker: this, logger: this.logger });
   }
 
   open(): void {
+    this.emit('CIRCUIT_BREAKER_STATE_UPDATED', {
+      circuitBreakerId: `transaction-history-circuit-breaker`,
+      newState: CircuitBreakerStatus.OPEN,
+    });
+
     this.applicationState.setCircuitBreakerState(this.subscriptionId, CircuitBreakerStatus.OPEN);
     this.state = new CircuitBreakerOpenState({ circuitBreaker: this, logger: this.logger });
   }
