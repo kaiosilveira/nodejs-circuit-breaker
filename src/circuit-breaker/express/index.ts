@@ -11,6 +11,10 @@ import CircuitBreakerHalfOpenState from '../state/half-open';
 import CircuitBreakerOpenState from '../state/open';
 import { CircuitBreakerStatus } from '../status';
 
+export enum ExpressCircuitBreakerEvents {
+  CIRCUIT_BREAKER_STATE_UPDATED = 'CIRCUIT_BREAKER_STATE_UPDATED',
+}
+
 export type ExpressCircuitBreakerConfig = { resourceName: string; threshold: number };
 export type ExpressCircuitBreakerProps = {
   bucket: ChildProcess;
@@ -71,8 +75,8 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
   }
 
   close(): void {
-    this.emit('CIRCUIT_BREAKER_STATE_UPDATED', {
-      circuitBreakerId: `transaction-history-circuit-breaker`,
+    this.emit(ExpressCircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
+      circuitBreakerId: this.subscriptionId,
       newState: CircuitBreakerStatus.CLOSED,
     });
 
@@ -81,8 +85,8 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
   }
 
   open(): void {
-    this.emit('CIRCUIT_BREAKER_STATE_UPDATED', {
-      circuitBreakerId: `transaction-history-circuit-breaker`,
+    this.emit(ExpressCircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
+      circuitBreakerId: this.subscriptionId,
       newState: CircuitBreakerStatus.OPEN,
     });
 
@@ -91,6 +95,11 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
   }
 
   halfOpen(): void {
+    this.emit(ExpressCircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {
+      circuitBreakerId: this.subscriptionId,
+      newState: CircuitBreakerStatus.HALF_OPEN,
+    });
+
     this.applicationState.setCircuitBreakerState(
       this.subscriptionId,
       CircuitBreakerStatus.HALF_OPEN

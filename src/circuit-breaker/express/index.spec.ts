@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import ExpressCircuitBreaker from '.';
+import ExpressCircuitBreaker, { ExpressCircuitBreakerEvents } from '.';
 import FakeChildProcess from '../../../test/fakes/nodejs/child-process/fake';
 import FakeLogger from '../../monitoring/logger/fake';
 import { CircuitBreakerStatus } from '../status';
@@ -85,12 +85,12 @@ describe('CircuitBreaker', () => {
 
       expect(result.status).toEqual(500);
       expect(spyOnEmit).toHaveBeenCalledWith('CIRCUIT_BREAKER_STATE_UPDATED', {
-        circuitBreakerId: `transaction-history-circuit-breaker`,
+        circuitBreakerId: circuitBreaker.subscriptionId,
         newState: CircuitBreakerStatus.OPEN,
       });
 
       expect(spyOnSetCircuitBreakerState).toHaveBeenCalledWith(
-        'transaction-history-circuit-breaker',
+        circuitBreaker.subscriptionId,
         CircuitBreakerStatus.OPEN
       );
 
@@ -154,13 +154,13 @@ describe('CircuitBreaker', () => {
       res.emit('finish');
 
       expect(spyOnEmit).toHaveBeenCalledWith('CIRCUIT_BREAKER_STATE_UPDATED', {
-        circuitBreakerId: `transaction-history-circuit-breaker`,
+        circuitBreakerId: circuitBreaker.subscriptionId,
         newState: CircuitBreakerStatus.CLOSED,
       });
 
       expect(next).toHaveBeenCalledTimes(1);
       expect(spyOnSetCircuitBreakerState).toHaveBeenCalledWith(
-        'transaction-history-circuit-breaker',
+        circuitBreaker.subscriptionId,
         CircuitBreakerStatus.CLOSED
       );
 
@@ -193,12 +193,12 @@ describe('CircuitBreaker', () => {
       res.emit('finish');
 
       expect(spyOnEmit).toHaveBeenCalledWith('CIRCUIT_BREAKER_STATE_UPDATED', {
-        circuitBreakerId: `transaction-history-circuit-breaker`,
+        circuitBreakerId: circuitBreaker.subscriptionId,
         newState: CircuitBreakerStatus.OPEN,
       });
 
       expect(spyOnSetCircuitBreakerState).toHaveBeenCalledWith(
-        'transaction-history-circuit-breaker',
+        circuitBreaker.subscriptionId,
         CircuitBreakerStatus.OPEN
       );
 
@@ -250,9 +250,19 @@ describe('CircuitBreaker', () => {
         circuitBreaker.open();
 
         const spyOnHalfOpen = jest.spyOn(circuitBreaker, 'halfOpen');
+        const spyOnEmit = jest.spyOn(circuitBreaker, 'emit');
         const spyOnLoggerInfo = jest.spyOn(logger, 'info');
 
         bucket.send({ type: 'THRESHOLD_RESTORED' });
+
+        expect(spyOnEmit).toHaveBeenCalledTimes(1);
+        expect(spyOnEmit).toHaveBeenCalledWith(
+          ExpressCircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED,
+          {
+            circuitBreakerId: circuitBreaker.subscriptionId,
+            newState: CircuitBreakerStatus.HALF_OPEN,
+          }
+        );
 
         expect(spyOnHalfOpen).toHaveBeenCalledTimes(1);
         expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
