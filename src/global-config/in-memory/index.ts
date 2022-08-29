@@ -1,21 +1,18 @@
-import GlobalConfig from "..";
-import { CircuitBreakerStatus } from "../../circuit-breaker/status";
+import GlobalConfig from '..';
+import { CircuitBreakerStatus } from '../../circuit-breaker/status';
 
 export default class InMemoryGlobalConfig implements GlobalConfig {
-  CB_OPEN: boolean;
+  CIRCUIT_BREAKERS: Object;
 
   constructor() {
-    this.CB_OPEN = false;
+    this.CIRCUIT_BREAKERS = {};
   }
+
+  fetchCircuitBreakerState(circuitBreakerId: string): CircuitBreakerStatus {
+    return this.CIRCUIT_BREAKERS[circuitBreakerId];
+  }
+
   setCircuitBreakerState(circuitBreakerId: string, state: CircuitBreakerStatus): void {
-    throw new Error('Method not implemented.');
-  }
-
-  isCircuitBreakerOpen() {
-    return this.CB_OPEN === true;
-  }
-
-  setCircuitBreakerOpen(value: boolean): void {
-    this.CB_OPEN = value;
+    this.CIRCUIT_BREAKERS[circuitBreakerId] = state;
   }
 }

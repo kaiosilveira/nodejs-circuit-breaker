@@ -18,13 +18,19 @@ class FakeChildProcess extends ChildProcess {
 }
 
 class FakeGlobalConfig implements GlobalConfig {
-  CB_OPEN: boolean;
+  circuitBreakerStates: Object;
 
   constructor() {
-    this.CB_OPEN = false;
+    this.circuitBreakerStates = {};
   }
 
-  setCircuitBreakerState(circuitBreakerId: string, state: CircuitBreakerStatus): void {}
+  fetchCircuitBreakerState(circuitBreakerId: string): CircuitBreakerStatus {
+    return this.circuitBreakerStates[circuitBreakerId];
+  }
+
+  setCircuitBreakerState(circuitBreakerId: string, state: CircuitBreakerStatus): void {
+    this.circuitBreakerStates[circuitBreakerId] = state;
+  }
 
   isCircuitBreakerOpen(): boolean {
     return false;
@@ -113,6 +119,7 @@ describe('CircuitBreaker', () => {
 
     it('should return INTERNAL_SERVER_ERROR 500 if state is OPEN', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
+      const spyOnSetCircuitBreakerState = jest.spyOn(globalConfig, 'setCircuitBreakerState');
 
       const cb = new ExpressCircuitBreaker({
         bucket,
@@ -130,6 +137,11 @@ describe('CircuitBreaker', () => {
       const result = cb.monitor(req, res, next) as Response;
 
       expect(result.status).toEqual(500);
+      expect(spyOnSetCircuitBreakerState).toHaveBeenCalledWith(
+        'transaction-history-circuit-breaker',
+        CircuitBreakerStatus.OPEN
+      );
+
       expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
       expect(spyOnLoggerInfo).toHaveBeenCalledWith({
         msg: 'Call refused from circuit breaker',
@@ -139,6 +151,7 @@ describe('CircuitBreaker', () => {
 
     it('should register success 200 OK response when the state is CLOSED', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
+      const spyOnSetCircuitBreakerState = jest.spyOn(globalConfig, 'setCircuitBreakerState');
 
       const cb = new ExpressCircuitBreaker({
         bucket,
@@ -156,6 +169,11 @@ describe('CircuitBreaker', () => {
       res.emit('finish');
 
       expect(next).toHaveBeenCalledTimes(1);
+      expect(spyOnSetCircuitBreakerState).toHaveBeenCalledWith(
+        'transaction-history-circuit-breaker',
+        CircuitBreakerStatus.CLOSED
+      );
+
       expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
       expect(spyOnLoggerInfo).toHaveBeenCalledWith({
         msg: 'Successful response',
@@ -165,6 +183,7 @@ describe('CircuitBreaker', () => {
 
     it('should close the circuit again if response has status 200 OK and circuit is at HALF_OPEN', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
+      const spyOnSetCircuitBreakerState = jest.spyOn(globalConfig, 'setCircuitBreakerState');
 
       const cb = new ExpressCircuitBreaker({
         bucket,
@@ -182,6 +201,11 @@ describe('CircuitBreaker', () => {
       res.emit('finish');
 
       expect(next).toHaveBeenCalledTimes(1);
+      expect(spyOnSetCircuitBreakerState).toHaveBeenCalledWith(
+        'transaction-history-circuit-breaker',
+        CircuitBreakerStatus.CLOSED
+      );
+
       expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
       expect(spyOnLoggerInfo).toHaveBeenCalledWith({
         msg: 'Successful response while in a HALF_OPEN state. Closing the circuit.',
@@ -192,6 +216,7 @@ describe('CircuitBreaker', () => {
     it('should open the circuit again if response 500 INTERNAL SERVER ERROR and circuit is at HALF_OPEN', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
       const spyOnBucketSend = jest.spyOn(bucket, 'send');
+      const spyOnSetCircuitBreakerState = jest.spyOn(globalConfig, 'setCircuitBreakerState');
 
       const cb = new ExpressCircuitBreaker({
         bucket,
@@ -208,6 +233,11 @@ describe('CircuitBreaker', () => {
 
       cb.monitor(req, res, next) as Response;
       res.emit('finish');
+
+      expect(spyOnSetCircuitBreakerState).toHaveBeenCalledWith(
+        'transaction-history-circuit-breaker',
+        CircuitBreakerStatus.HALF_OPEN
+      );
 
       expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
       expect(spyOnLoggerInfo).toHaveBeenCalledWith({

@@ -71,17 +71,17 @@ export default class ExpressCircuitBreaker {
   }
 
   close(): void {
-    this.globalConfig.setCircuitBreakerOpen(false);
+    this.globalConfig.setCircuitBreakerState(this.subscriptionId, CircuitBreakerStatus.CLOSED);
     this.state = new CircuitBreakerClosedState({ circuitBreaker: this, logger: this.logger });
   }
 
   open(): void {
-    this.globalConfig.setCircuitBreakerOpen(true);
+    this.globalConfig.setCircuitBreakerState(this.subscriptionId, CircuitBreakerStatus.OPEN);
     this.state = new CircuitBreakerOpenState({ circuitBreaker: this, logger: this.logger });
   }
 
   halfOpen(): void {
-    this.globalConfig.setCircuitBreakerOpen(false);
+    this.globalConfig.setCircuitBreakerState(this.subscriptionId, CircuitBreakerStatus.HALF_OPEN);
     this.state = new CircuitBreakerHalfOpenState({ circuitBreaker: this, logger: this.logger });
   }
 

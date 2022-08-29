@@ -1,4 +1,5 @@
 import TransactionHistoryService from '..';
+import { CircuitBreakerStatus } from '../../../circuit-breaker/status';
 import GlobalConfig from '../../../global-config';
 
 export default class FakeTransactionHistoryService implements TransactionHistoryService {
@@ -13,7 +14,11 @@ export default class FakeTransactionHistoryService implements TransactionHistory
 
   async fetchTransactionHistory() {
     return new Promise((resolve, reject) => {
-      if (this.counter === 4 && !this.globalConfig.isCircuitBreakerOpen()) {
+      if (
+        this.counter === 4 &&
+        this.globalConfig.fetchCircuitBreakerState('transaction-history-circuit-breaker') !==
+          CircuitBreakerStatus.OPEN
+      ) {
         this.counter = 1;
         reject({ msg: 'Service temporarily unavailable' });
       } else {
