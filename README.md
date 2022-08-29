@@ -21,6 +21,12 @@ A banking app was chosen to be the hypothetical domain for this implementation. 
 
 # Implementation details
 
+This implementation posed some interesting technical challenges, specially on handling the decrementing of the counters, as node is a single-thread language. The solution for the counters was to abstract it into the [leaky-bucket/process-definition.ts](./src/leaky-bucket/process-definition.ts) child process, which wraps a [LeakyBucket](./src/leaky-bucket/index.ts) class, that holds the counters for all registered clients. The registration is done via inter-process communication using event emitters, and the counters are infinitely decremented using a `setInterval` loop, with a minimum of `0` for each counter:
+
+```typescript
+Math.max(0, this.COUNTERS[subscriptionId].current - 1);
+```
+
 ## Tech stack
 
 **Programming language**
@@ -31,7 +37,7 @@ Typescript was chosen to be the programming language for this project, mainly be
 
 Express was chosen as the web server framework for this implementation, its middleware structure allow us to plug our circuit breaker as a middleware, blocking requests when in the **_OPEN_** state.
 
-**Jest**
+**Test framework**
 
 Jest was chosen as the test runner. Its built-in spying and stubbing structure allows for fast implementation of unit tests and its declarative expectation syntax allows for a readable and elegant test structure.
 
@@ -94,7 +100,9 @@ export default interface CircuitBreaker {
 
 The `open`, `halfOpen` and `close` methods allow for changing the circuit breaker state, and the `registerFailure` method implements the logic to compute a new failure, in whatever way the client code likes.
 
-In our particular case, an `ExpressCircuitBreaker` was implemented. This implementation contains a `monitor(req: Request, res: Response, next: Function)` method, which has the signature of an express middleware and is meant to be added into an express middleware chain. This method is one of the key parts of this implementation, it fails fast in case the circuit is `OPEN`, and adds a listener into the `response.finish` event to monitor each outgoing response and check its status.
+In our particular case, an [ExpressCircuitBreaker](./src/circuit-breaker/express/index.ts) was implemented. This implementation contains a `monitor(req: Request, res: Response, next: Function)` method, which has the signature of an express middleware and is meant to be added into an express middleware chain. This method is one of the key parts of this implementation, it fails fast in case the circuit is `OPEN`, and adds a listener into the `response.finish` event to monitor each outgoing response and check its status.
+
+`ExpressCircuitBreaker` also relies heavily on the [State Pattern](https://github.com/kaiosilveira/design-patterns/tree/main/state) to react to events when in different states without resorting to a many `switch` statements.
 
 ### Closed circuit, requests flowing though
 
@@ -155,8 +163,10 @@ process.on('message', (msg: LeakyBucketMessage) => {
     // ...
     case 'NEW_FAILURE':
       bucket.increment({ subscriptionId });
-// ...
-})
+    // ...
+  }
+  // ...
+});
 ```
 
 This happens until the bucket starts leaking, i.e., when the failure count is high enough to go above the specified threshold, which will cause the bucket to report a `THRESHOLD_VIOLATION` event back to the main process:
@@ -184,8 +194,7 @@ class ExpressCircuitBreaker extends EventEmitter implements CircuitBreaker {
         this.logger.info({ msg: 'Threshold violated. Opening circuit.' });
         this.open();
         break;
-      default:
-        break;
+      // ...
     }
   }
 
@@ -195,9 +204,11 @@ class ExpressCircuitBreaker extends EventEmitter implements CircuitBreaker {
 
 ### External service is misbehaving, circuit is opened
 
+When the circuit is `OPEN`, all requests will be blocked and the endpoint will fail fast.
+
 #### Failing fast
 
-One of the main reasons to implement a Circuit Breaker is to be able to fail fast if we know the request is likely to fail anyway. That's what happens when the circuit is open:
+One of the main reasons to implement a Circuit Breaker is to be able to fail fast if we know the request is likely to fail anyway:
 
 ```typescript
 if (this.state.status === CircuitBreakerStatus.OPEN) {
@@ -209,6 +220,39 @@ if (this.state.status === CircuitBreakerStatus.OPEN) {
 A log is added to let our monitoring team know that a circuit breaker was opened, and a `500 INTERNAL SERVER ERROR` response is returned to the client.
 
 ### Control levels goes below threshold, circuit moves to half-open
+
+After a while, the bucket will stop leaking, the `counter` for the given circuit breaker will be back below the threshold, and whenever it happens, the bucket process itself will notify this fact:
+
+```typescript
+if (currentCount - threshold === 1) {
+  process.send?.({ type: 'THRESHOLD_RESTORED', subscriptionId });
+}
+bucket.decrement({ subscriptionId });
+```
+
+This will in turn trigger a listener on the circuit breaker, which will react changing its status to `HALF_OPEN`:
+
+```typescript
+class ExpressCircuitBreaker extends EventEmitter implements CircuitBreaker {
+  // ...code
+  private _handleBucketMessage(msg: LeakyBucketMessage): void {
+    switch (msg.type) {
+      // other case statements...
+      case 'THRESHOLD_RESTORED':
+        this.halfOpen();
+        this.logger.info({
+          msg: 'Threshold restored. Moving circuit to half-open.',
+          status: this.state.status,
+        });
+        break;
+      // ...
+    }
+  }
+  // more code
+}
+```
+
+In the `HALF_OPEN` state, the next response decides wether new requests will be allowed to flow though again (if `statusCode: 200`) or will continue being denied (if `statusCode: 500`).
 
 ### The Leaky Bucket pattern
 
