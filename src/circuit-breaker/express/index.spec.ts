@@ -3,7 +3,7 @@ import EventEmitter from 'events';
 import { Request, Response } from 'express';
 
 import ExpressCircuitBreaker from '.';
-import GlobalConfig from '../../global-config';
+import GlobalConfig from '../../application-state';
 import FakeLogger from '../../monitoring/logger/fake';
 import { CircuitBreakerStatus } from '../status';
 
@@ -81,7 +81,7 @@ describe('CircuitBreaker', () => {
       new ExpressCircuitBreaker({
         bucket,
         logger,
-        globalConfig,
+        applicationState: globalConfig,
         config: { resourceName: 'transaction-history', threshold },
       });
 
@@ -98,7 +98,7 @@ describe('CircuitBreaker', () => {
       new ExpressCircuitBreaker({
         bucket,
         logger,
-        globalConfig,
+        applicationState: globalConfig,
         config: { resourceName: 'transaction-history', threshold },
       });
 
@@ -124,7 +124,7 @@ describe('CircuitBreaker', () => {
       const cb = new ExpressCircuitBreaker({
         bucket,
         logger,
-        globalConfig,
+        applicationState: globalConfig,
         config: { resourceName: 'transaction-history', threshold },
       });
 
@@ -156,7 +156,7 @@ describe('CircuitBreaker', () => {
       const cb = new ExpressCircuitBreaker({
         bucket,
         logger,
-        globalConfig,
+        applicationState: globalConfig,
         config: { resourceName: 'transaction-history', threshold },
       });
 
@@ -188,7 +188,7 @@ describe('CircuitBreaker', () => {
       const cb = new ExpressCircuitBreaker({
         bucket,
         logger,
-        globalConfig,
+        applicationState: globalConfig,
         config: { resourceName: 'transaction-history', threshold },
       });
 
@@ -221,7 +221,7 @@ describe('CircuitBreaker', () => {
       const cb = new ExpressCircuitBreaker({
         bucket,
         logger,
-        globalConfig,
+        applicationState: globalConfig,
         config: { resourceName: 'transaction-history', threshold },
       });
 

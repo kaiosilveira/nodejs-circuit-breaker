@@ -1,6 +1,6 @@
 import { ChildProcess } from 'child_process';
 import { Request, Response } from 'express';
-import GlobalConfig from '../../global-config';
+import ApplicationState from '../../application-state';
 import { LeakyBucketMessage } from '../../leaky-bucket/types';
 import ILogger from '../../monitoring/logger';
 import CircuitBreakerState from '../state';
@@ -15,24 +15,24 @@ export default class ExpressCircuitBreaker {
   logger: ILogger;
   bucket: ChildProcess;
   config: ExpressCircuitBreakerConfig;
-  globalConfig: GlobalConfig;
+  applicationState: ApplicationState;
   state: CircuitBreakerState;
 
   constructor({
     bucket,
     logger,
     config,
-    globalConfig,
+    applicationState,
   }: {
     bucket: ChildProcess;
     logger: ILogger;
     config: ExpressCircuitBreakerConfig;
-    globalConfig: GlobalConfig;
+    applicationState: ApplicationState;
   }) {
     this.config = config;
     this.bucket = bucket;
     this.logger = logger;
-    this.globalConfig = globalConfig;
+    this.applicationState = applicationState;
     this.subscriptionId = `${this.config.resourceName}-circuit-breaker`;
     this.state = new CircuitBreakerClosedState({ circuitBreaker: this, logger: this.logger });
 
@@ -71,17 +71,20 @@ export default class ExpressCircuitBreaker {
   }
 
   close(): void {
-    this.globalConfig.setCircuitBreakerState(this.subscriptionId, CircuitBreakerStatus.CLOSED);
+    this.applicationState.setCircuitBreakerState(this.subscriptionId, CircuitBreakerStatus.CLOSED);
     this.state = new CircuitBreakerClosedState({ circuitBreaker: this, logger: this.logger });
   }
 
   open(): void {
-    this.globalConfig.setCircuitBreakerState(this.subscriptionId, CircuitBreakerStatus.OPEN);
+    this.applicationState.setCircuitBreakerState(this.subscriptionId, CircuitBreakerStatus.OPEN);
     this.state = new CircuitBreakerOpenState({ circuitBreaker: this, logger: this.logger });
   }
 
   halfOpen(): void {
-    this.globalConfig.setCircuitBreakerState(this.subscriptionId, CircuitBreakerStatus.HALF_OPEN);
+    this.applicationState.setCircuitBreakerState(
+      this.subscriptionId,
+      CircuitBreakerStatus.HALF_OPEN
+    );
     this.state = new CircuitBreakerHalfOpenState({ circuitBreaker: this, logger: this.logger });
   }
 

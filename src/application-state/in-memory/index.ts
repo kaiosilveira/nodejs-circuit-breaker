@@ -1,7 +1,7 @@
-import GlobalConfig from '..';
+import ApplicationState from '..';
 import { CircuitBreakerStatus } from '../../circuit-breaker/status';
 
-export default class InMemoryGlobalConfig implements GlobalConfig {
+export default class InMemoryApplicationState implements ApplicationState {
   CIRCUIT_BREAKERS: Object;
 
   constructor() {

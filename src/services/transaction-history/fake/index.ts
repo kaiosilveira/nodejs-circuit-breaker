@@ -1,12 +1,12 @@
 import TransactionHistoryService from '..';
 import { CircuitBreakerStatus } from '../../../circuit-breaker/status';
-import GlobalConfig from '../../../global-config';
+import ApplicationState from '../../../application-state';
 
 export default class FakeTransactionHistoryService implements TransactionHistoryService {
   counter: number;
-  globalConfig: GlobalConfig;
+  globalConfig: ApplicationState;
 
-  constructor({ globalConfig }: { globalConfig: GlobalConfig }) {
+  constructor({ globalConfig }: { globalConfig: ApplicationState }) {
     this.counter = 1;
     this.globalConfig = globalConfig;
     this.fetchTransactionHistory = this.fetchTransactionHistory.bind(this);

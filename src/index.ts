@@ -8,25 +8,25 @@ import { ConsoleLogger } from './monitoring/logger';
 import ExpressCircuitBreaker from './circuit-breaker/express';
 import TransactionHistoryResolver from './resolvers/transaction-resolver';
 import FakeTransactionHistoryService from './services/transaction-history/fake';
-import InMemoryGlobalConfig from './global-config/in-memory';
+import InMemoryApplicationState from './application-state/in-memory';
 
 const PORT: Number = 3000;
 const app = Express();
 
 const LeakyBucket = ChildProcess.fork(`${Path.resolve(__dirname)}/leaky-bucket/process-definition`);
 
-const globalConfig = new InMemoryGlobalConfig();
+const applicationState = new InMemoryApplicationState();
 
 const circuitBreaker = new ExpressCircuitBreaker({
   bucket: LeakyBucket,
   logger: new ConsoleLogger(),
   config: { resourceName: 'transaction-history', threshold: 10 },
-  globalConfig,
+  applicationState,
 });
 
 const transactionHistoryResolver = new TransactionHistoryResolver({
   logger: new ConsoleLogger(),
-  transactionHistoryService: new FakeTransactionHistoryService({ globalConfig }),
+  transactionHistoryService: new FakeTransactionHistoryService({ globalConfig: applicationState }),
 });
 
 app.get('/me/transaction-history', circuitBreaker.monitor, transactionHistoryResolver.resolve);
