@@ -10,6 +10,13 @@ import CircuitBreakerOpenState from '../state/open';
 import { CircuitBreakerStatus } from '../status';
 
 export type ExpressCircuitBreakerConfig = { resourceName: string; threshold: number };
+export type ExpressCircuitBreakerProps = {
+  bucket: ChildProcess;
+  logger: ILogger;
+  config: ExpressCircuitBreakerConfig;
+  applicationState: ApplicationState;
+};
+
 export default class ExpressCircuitBreaker {
   subscriptionId: string;
   logger: ILogger;
@@ -18,17 +25,7 @@ export default class ExpressCircuitBreaker {
   applicationState: ApplicationState;
   state: CircuitBreakerState;
 
-  constructor({
-    bucket,
-    logger,
-    config,
-    applicationState,
-  }: {
-    bucket: ChildProcess;
-    logger: ILogger;
-    config: ExpressCircuitBreakerConfig;
-    applicationState: ApplicationState;
-  }) {
+  constructor({ bucket, logger, config, applicationState }: ExpressCircuitBreakerProps) {
     this.config = config;
     this.bucket = bucket;
     this.logger = logger;
