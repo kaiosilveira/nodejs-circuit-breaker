@@ -3,8 +3,12 @@ import ExpressCircuitBreaker from '../..';
 import ILogger from '../../../monitoring/logger';
 import { CircuitBreakerStatus } from '../../status';
 
+export type CircuitBreakerHalfOpenStateProps = {
+  circuitBreaker: ExpressCircuitBreaker;
+  logger: ILogger;
+};
 export default class CircuitBreakerHalfOpenState extends CircuitBreakerState {
-  constructor({ circuitBreaker, logger }: { circuitBreaker: ExpressCircuitBreaker; logger: ILogger }) {
+  constructor({ circuitBreaker, logger }) {
     super({ status: CircuitBreakerStatus.HALF_OPEN, circuitBreaker, logger });
   }
 
