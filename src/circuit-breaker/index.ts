@@ -108,7 +108,6 @@ export default class CircuitBreaker {
     this.close = this.close.bind(this);
     this.registerFailure = this.registerFailure.bind(this);
 
-    this._handleInternalServerErrorResponse = this._handleInternalServerErrorResponse.bind(this);
     this._setupLeakyBucket = this._setupLeakyBucket.bind(this);
     this._handleBucketMessage = this._handleBucketMessage.bind(this);
 
@@ -127,7 +126,7 @@ export default class CircuitBreaker {
           this.state.handleOkResponse();
           break;
         case 500:
-          this._handleInternalServerErrorResponse();
+          this.state.handleInternalServerErrorResponse();
           break;
         default:
           break;
@@ -157,22 +156,6 @@ export default class CircuitBreaker {
 
   setState(status: CircuitBreakerStatus): void {
     this._state = status;
-  }
-
-  private _handleInternalServerErrorResponse() {
-    switch (this._state) {
-      case CircuitBreakerStatus.HALF_OPEN:
-        this.open();
-        this.logger.info({
-          msg: 'Failure response while in a HALF_OPEN state. Opening circuit.',
-          status: this._state,
-        });
-        break;
-      default:
-        break;
-    }
-
-    this.registerFailure();
   }
 
   registerFailure() {
