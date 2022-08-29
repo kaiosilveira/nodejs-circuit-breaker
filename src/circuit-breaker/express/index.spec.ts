@@ -1,85 +1,18 @@
-import { ChildProcess } from 'child_process';
-import EventEmitter from 'events';
 import { Request, Response } from 'express';
 
 import ExpressCircuitBreaker from '.';
-import GlobalConfig from '../../application-state';
+import FakeChildProcess from '../../../test/fakes/nodejs/child-process/fake';
 import FakeLogger from '../../monitoring/logger/fake';
 import { CircuitBreakerStatus } from '../status';
-
-type LooseObject = {
-  [key: string]: Function;
-};
-
-class FakeChildProcess extends ChildProcess {
-  _callbacks: LooseObject;
-
-  constructor() {
-    super();
-    this._callbacks = {};
-  }
-
-  send(message) {
-    Object.values(this._callbacks).map(cb => cb(message));
-    return true;
-  }
-
-  on(event: string, callback: Function) {
-    this._callbacks[event] = callback;
-    return this;
-  }
-}
-
-class FakeGlobalConfig implements GlobalConfig {
-  circuitBreakerStates: Object;
-
-  constructor() {
-    this.circuitBreakerStates = {};
-  }
-
-  fetchCircuitBreakerState(circuitBreakerId: string): CircuitBreakerStatus {
-    return this.circuitBreakerStates[circuitBreakerId];
-  }
-
-  setCircuitBreakerState(circuitBreakerId: string, state: CircuitBreakerStatus): void {
-    this.circuitBreakerStates[circuitBreakerId] = state;
-  }
-
-  isCircuitBreakerOpen(): boolean {
-    return false;
-  }
-
-  setCircuitBreakerOpen(_: boolean): void {}
-}
-
-class FakeExpressResponse extends EventEmitter {
-  statusCode: number;
-  body: object;
-  callbacks: Object;
-
-  constructor({ statusCode }: { statusCode: number } = { statusCode: 200 }) {
-    super();
-    this.statusCode = statusCode;
-    this.body = {};
-    this.callbacks = {};
-  }
-
-  status(status: number) {
-    this.statusCode = status;
-    return this;
-  }
-
-  json(obj: any): any {
-    return { body: obj, status: this.statusCode };
-  }
-}
+import FakeApplicationState from '../../application-state/fake';
+import FakeExpressResponse from '../../../test/fakes/express/http/response/fake';
 
 describe('CircuitBreaker', () => {
   const threshold = 10;
   const subscriptionId = 'transaction-history-circuit-breaker';
   const bucket = new FakeChildProcess();
   const logger = new FakeLogger();
-  const applicationState = new FakeGlobalConfig();
+  const applicationState = new FakeApplicationState();
   const next = jest.fn();
 
   afterEach(() => {
@@ -124,7 +57,7 @@ describe('CircuitBreaker', () => {
     const threshold = 10;
     const bucket = new FakeChildProcess();
     const logger = new FakeLogger();
-    const globalConfig = new FakeGlobalConfig();
+    const globalConfig = new FakeApplicationState();
 
     afterEach(() => {
       jest.restoreAllMocks();
