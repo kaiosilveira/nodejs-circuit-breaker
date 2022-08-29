@@ -3,8 +3,9 @@ import CircuitBreaker from '../..';
 import ILogger from '../../../monitoring/logger';
 import { CircuitBreakerStatus } from '../../status';
 
+export type CircuitBreakerClosedStateProps = { circuitBreaker: CircuitBreaker; logger: ILogger };
 export default class CircuitBreakerClosedState extends CircuitBreakerState {
-  constructor({ circuitBreaker, logger }: { circuitBreaker: CircuitBreaker; logger: ILogger }) {
+  constructor({ circuitBreaker, logger }: CircuitBreakerClosedStateProps) {
     super({ status: CircuitBreakerStatus.CLOSED, circuitBreaker, logger });
   }
 
