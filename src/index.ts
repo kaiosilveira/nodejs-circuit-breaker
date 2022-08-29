@@ -4,7 +4,8 @@ import * as ChildProcess from 'child_process';
 import Express from 'express';
 
 import { ConsoleLogger } from './monitoring/logger';
-import { ExpressCircuitBreaker } from './circuit-breaker';
+
+import ExpressCircuitBreaker from './circuit-breaker/express';
 import { InMemoryGlobalConfig } from './global-config';
 import TransactionHistoryResolver from './resolvers/transaction-resolver';
 import FakeTransactionHistoryService from './services/transaction-history/fake';
