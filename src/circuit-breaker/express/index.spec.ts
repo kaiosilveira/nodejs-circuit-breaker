@@ -6,6 +6,7 @@ import FakeChildProcess from '../../../test/fakes/nodejs/child-process/fake';
 import FakeLogger from '../../monitoring/logger/fake';
 import { CircuitBreakerStatus } from '../status';
 import FakeExpressResponse from '../../../test/fakes/express/http/response/fake';
+import { LeakyBucketMessages } from '../../leaky-bucket/messages';
 
 describe('CircuitBreaker', () => {
   const threshold = 10;
@@ -31,7 +32,7 @@ describe('CircuitBreaker', () => {
 
       expect(spyOnSend).toHaveBeenCalledTimes(1);
       expect(spyOnSend).toHaveBeenCalledWith({
-        type: 'REGISTER',
+        type: LeakyBucketMessages.REGISTER,
         payload: { subscriptionId, threshold },
       });
     });
@@ -177,7 +178,7 @@ describe('CircuitBreaker', () => {
       });
 
       expect(spyOnBucketSend).toHaveBeenCalledWith({
-        type: 'NEW_FAILURE',
+        type: LeakyBucketMessages.NEW_FAILURE,
         payload: { subscriptionId },
       });
     });
@@ -195,7 +196,7 @@ describe('CircuitBreaker', () => {
         const spyOnOpen = jest.spyOn(circuitBreaker, 'open');
         const spyOnLoggerInfo = jest.spyOn(logger, 'info');
 
-        bucket.send({ type: 'THRESHOLD_VIOLATION' });
+        bucket.send({ type: LeakyBucketMessages.THRESHOLD_VIOLATION });
 
         expect(spyOnOpen).toHaveBeenCalledTimes(1);
         expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
@@ -219,7 +220,7 @@ describe('CircuitBreaker', () => {
         const spyOnEmit = jest.spyOn(circuitBreaker, 'emit');
         const spyOnLoggerInfo = jest.spyOn(logger, 'info');
 
-        bucket.send({ type: 'THRESHOLD_RESTORED' });
+        bucket.send({ type: LeakyBucketMessages.THRESHOLD_RESTORED });
 
         expect(spyOnEmit).toHaveBeenCalledTimes(1);
         expect(spyOnEmit).toHaveBeenCalledWith(CircuitBreakerEvents.CIRCUIT_BREAKER_STATE_UPDATED, {

@@ -1,15 +1,16 @@
 import { ChildProcess } from 'child_process';
 import EventEmitter from 'events';
 import { Request, Response } from 'express';
+
 import CircuitBreaker, { CircuitBreakerEvents } from '..';
-import ApplicationState from '../../application-state';
-import { LeakyBucketMessage } from '../../leaky-bucket/types';
-import ILogger from '../../monitoring/logger';
 import CircuitBreakerState from '../state';
+import { CircuitBreakerStatus } from '../status';
 import CircuitBreakerClosedState from '../state/closed';
 import CircuitBreakerHalfOpenState from '../state/half-open';
 import CircuitBreakerOpenState from '../state/open';
-import { CircuitBreakerStatus } from '../status';
+import { LeakyBucketMessages } from '../../leaky-bucket/messages';
+import { LeakyBucketMessage } from '../../leaky-bucket/types';
+import ILogger from '../../monitoring/logger';
 
 export type ExpressCircuitBreakerConfig = { resourceName: string; threshold: number };
 export type ExpressCircuitBreakerProps = {
@@ -49,7 +50,7 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
     return this.state.status;
   }
 
-  getIdentifier() {
+  getIdentifier(): string {
     return this.subscriptionId;
   }
 
@@ -99,20 +100,20 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
     });
   }
 
-  registerFailure() {
+  registerFailure(): void {
     this.bucket.send({
-      type: 'NEW_FAILURE',
+      type: LeakyBucketMessages.NEW_FAILURE,
       payload: { subscriptionId: this.subscriptionId },
     } as LeakyBucketMessage);
   }
 
   private _handleBucketMessage(msg: LeakyBucketMessage): void {
     switch (msg.type) {
-      case 'THRESHOLD_VIOLATION':
+      case LeakyBucketMessages.THRESHOLD_VIOLATION:
         this.logger.info({ msg: 'Threshold violated. Opening circuit.' });
         this.open();
         break;
-      case 'THRESHOLD_RESTORED':
+      case LeakyBucketMessages.THRESHOLD_RESTORED:
         this.halfOpen();
         this.logger.info({
           msg: 'Threshold restored. Moving circuit to half-open.',
@@ -124,9 +125,9 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
     }
   }
 
-  private _setupLeakyBucket() {
+  private _setupLeakyBucket(): void {
     this.bucket.send({
-      type: 'REGISTER',
+      type: LeakyBucketMessages.REGISTER,
       payload: {
         subscriptionId: this.subscriptionId,
         threshold: this.config.threshold,
