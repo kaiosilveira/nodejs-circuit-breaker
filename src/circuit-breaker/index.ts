@@ -89,10 +89,6 @@ export default class CircuitBreaker {
     this._state = CircuitBreakerStatus.HALF_OPEN;
   }
 
-  setState(status: CircuitBreakerStatus): void {
-    this._state = status;
-  }
-
   registerFailure() {
     this.bucket.send({
       type: 'NEW_FAILURE',
