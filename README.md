@@ -2,15 +2,17 @@
 
 [![Continuous Integration](https://github.com/kaiosilveira/nodejs-circuit-breaker/actions/workflows/ci.yml/badge.svg)](https://github.com/kaiosilveira/nodejs-circuit-breaker/actions/workflows/ci.yml)
 
+🚧 **This repository is a work in progress. It's being constantly updated, so stay tuned if you're interested!** 🚧
+
 This repository is an example implementation of a Circuit Breaker, as described in the "Release it" book, by Michael T. Nygard.
 
 ## Roadmap
 
-This is the technical roadmap of things I want to implement in this repo:
+Remaining things to implement:
 
-- Leaky bucket pattern (use child process for that)
 - Endpoints for directly tripping the CB
 - Differ callback failures form normal failures
+- Improve logging
 - fallback to last cached result in case the transaction-history-service is down
 
 # Hypothetical domain
@@ -75,6 +77,38 @@ jobs:
 It install all the dependencies, build the project and run all unit tests.
 
 ## The Circuit Breaker
+
+The `CircuitBreaker` interface is relatively simple (at least in its surface):
+
+```typescript
+export default interface CircuitBreaker {
+  open(): void;
+  halfOpen(): void;
+  close(): void;
+  registerFailure(): void;
+}
+```
+
+The `open`, `halfOpen` and `close` methods allow for changing the circuit breaker state, and the `registerFailure` method implements the logic to compute a new failure, in whatever way the client code likes.
+
+In our particular case, an `ExpressCircuitBreaker` was implemented. This implementation contains a `monitor(req: Request, res: Response, next: Function)` method, which has the signature of an express middleware and is meant to be added into an express middleware chain. This method is one of the key parts of this implementation, it fails fast in case the circuit is `OPEN`, and adds a listener into the `response.finish` event to monitor each outgoing response and check its status.
+
+### Closed circuit, requests flowing though
+
+### Half-Open circuit, next response status decides
+
+### Failing fast
+
+One of the main reasons to implement a Circuit Breaker is to be able to fail fast if we know the request is likely to fail anyway. That's what happens when the circuit is open:
+
+```typescript
+if (this.state.status === CircuitBreakerStatus.OPEN) {
+  this.logger.info({ msg: 'Call refused from circuit breaker', status: this.state.status });
+  return res.status(500).json({ msg: 'Call refused from circuit breaker' });
+}
+```
+
+A log is added to let our monitoring team know that a circuit breaker was opened, and a `500 INTERNAL SERVER ERROR` response is returned to the client.
 
 ## The Leaky Bucket pattern
 
