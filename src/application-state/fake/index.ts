@@ -1,4 +1,5 @@
 import ApplicationState from '..';
+import circuitBreaker from '../../circuit-breaker';
 import { CircuitBreakerStatus } from '../../circuit-breaker/status';
 
 export default class FakeApplicationState implements ApplicationState {
@@ -7,6 +8,8 @@ export default class FakeApplicationState implements ApplicationState {
   constructor() {
     this.circuitBreakerStates = {};
   }
+
+  registerCircuitBreaker(_: circuitBreaker): void {}
 
   fetchCircuitBreakerState(circuitBreakerId: string): CircuitBreakerStatus {
     return this.circuitBreakerStates[circuitBreakerId];
