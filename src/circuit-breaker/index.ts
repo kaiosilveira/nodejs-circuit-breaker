@@ -1,7 +1,7 @@
 import { ChildProcess } from 'child_process';
 import { Request, Response } from 'express';
 
-import ILogger from '../logger';
+import ILogger from '../monitoring/logger';
 import { LeakyBucketMessage } from '../leaky-bucket/types';
 import GlobalConfig from '../global-config';
 

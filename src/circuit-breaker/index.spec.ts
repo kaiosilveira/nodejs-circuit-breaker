@@ -4,7 +4,7 @@ import { Request, Response } from 'express';
 
 import CircuitBreaker, { CircuitBreakerStatus } from '.';
 import GlobalConfig from '../global-config';
-import ILogger from '../logger';
+import ILogger from '../monitoring/logger';
 
 class FakeChildProcess extends ChildProcess {
   send() {

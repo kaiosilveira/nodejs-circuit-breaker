@@ -3,7 +3,7 @@ import * as Path from 'path';
 import * as ChildProcess from 'child_process';
 import Express from 'express';
 
-import { ConsoleLogger } from './logger';
+import { ConsoleLogger } from './monitoring/logger';
 import CircuitBreaker from './circuit-breaker';
 import { InMemoryGlobalConfig } from './global-config';
 import TransactionHistoryResolver from './resolvers/transaction-resolver';
@@ -19,6 +19,7 @@ const globalConfig = new InMemoryGlobalConfig();
 const circuitBreaker = new CircuitBreaker({
   bucket: LeakyBucket,
   logger: new ConsoleLogger(),
+  config: { resourceName: 'transaction-history', threshold: 10 },
   globalConfig,
 });
 
