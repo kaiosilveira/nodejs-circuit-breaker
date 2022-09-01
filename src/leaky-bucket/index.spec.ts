@@ -1,9 +1,9 @@
-import LeakyBucket from '.';
+import { LeakyBucketImpl } from '.';
 
 describe('LeakyBucket', () => {
   describe('subscribe', () => {
     it('should throw an error if subscriptionId is invalid', () => {
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
       expect(() => {
         bucket.subscribe({ subscriptionId: '' });
       }).toThrow('Invalid subscriptionId. Expected a string.');
@@ -11,7 +11,7 @@ describe('LeakyBucket', () => {
 
     it('should allow new subscriptions', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
 
       bucket.subscribe({ subscriptionId });
 
@@ -21,7 +21,7 @@ describe('LeakyBucket', () => {
 
     it('should set the default threshold as 100', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
 
       bucket.subscribe({ subscriptionId });
 
@@ -31,7 +31,7 @@ describe('LeakyBucket', () => {
     it('should allow to specify a different threshold', () => {
       const subscriptionId = 'abcd';
       const threshold = 500;
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
 
       bucket.subscribe({ subscriptionId, threshold });
 
@@ -42,7 +42,7 @@ describe('LeakyBucket', () => {
   describe('fetchFailureCountFor', () => {
     it('should throw an error if subscriptionId is not registered', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
       expect(() => bucket.fetchCountFor({ subscriptionId })).toThrow(
         'Provided subscriptionId is not registered. Please register it first.'
       );
@@ -50,7 +50,7 @@ describe('LeakyBucket', () => {
 
     it('should return the failure count for a subscription', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
       bucket.subscribe({ subscriptionId });
 
       const failureCount = bucket.fetchCountFor({ subscriptionId });
@@ -62,7 +62,7 @@ describe('LeakyBucket', () => {
   describe('registerFailure', () => {
     it('should throw an error if subscriptionId is not registered', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
 
       expect(() => {
         bucket.increment({ subscriptionId });
@@ -71,7 +71,7 @@ describe('LeakyBucket', () => {
 
     it('should register a new failure for a subscription', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
       bucket.subscribe({ subscriptionId });
 
       bucket.increment({ subscriptionId });
@@ -83,7 +83,7 @@ describe('LeakyBucket', () => {
   describe('resetCountsFor', () => {
     it('should throw an error if subscriptionId is not registered', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
 
       expect(() => bucket.resetCountFor({ subscriptionId })).toThrow(
         'Provided subscriptionId is not registered. Please register it first.'
@@ -92,7 +92,7 @@ describe('LeakyBucket', () => {
 
     it('should reset the counts for a given subscription id', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
       bucket.subscribe({ subscriptionId });
 
       bucket.resetCountFor({ subscriptionId });
@@ -104,7 +104,7 @@ describe('LeakyBucket', () => {
   describe('decrement', () => {
     it('should throw an error if subscriptionId is not registered', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
 
       expect(() => bucket.decrement({ subscriptionId })).toThrow(
         'Provided subscriptionId is not registered. Please register it first.'
@@ -113,7 +113,7 @@ describe('LeakyBucket', () => {
 
     it('should decrement the counter for a subscriptionId', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
       bucket.subscribe({ subscriptionId });
       bucket.increment({ subscriptionId });
       bucket.increment({ subscriptionId });
@@ -126,7 +126,7 @@ describe('LeakyBucket', () => {
 
     it('should floor the count to zero', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
       bucket.subscribe({ subscriptionId });
 
       bucket.decrement({ subscriptionId });
@@ -141,7 +141,7 @@ describe('LeakyBucket', () => {
   describe('isAboveThreshold', () => {
     it('should throw an error if subscriptionId is not registered', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
 
       expect(() => bucket.isAboveThreshold({ subscriptionId })).toThrow(
         'Provided subscriptionId is not registered. Please register it first.'
@@ -150,7 +150,7 @@ describe('LeakyBucket', () => {
 
     it('should return false if subscription is not above the threshold', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
       bucket.subscribe({ subscriptionId });
 
       const isAbove = bucket.isAboveThreshold({ subscriptionId });
@@ -160,7 +160,7 @@ describe('LeakyBucket', () => {
 
     it('should return true if subscription is above the threshold', () => {
       const subscriptionId = 'abcd';
-      const bucket = new LeakyBucket();
+      const bucket = new LeakyBucketImpl();
       bucket.subscribe({ subscriptionId, threshold: 1 });
       bucket.increment({ subscriptionId });
       bucket.increment({ subscriptionId });

@@ -1,8 +1,8 @@
-import LeakyBucket from '.';
+import { LeakyBucketImpl } from '.';
 import { LeakyBucketMessages } from './messages';
 import { LeakyBucketMessage } from './types';
 
-const bucket = new LeakyBucket();
+const bucket = new LeakyBucketImpl();
 
 process.on('message', (msg: LeakyBucketMessage) => {
   const { subscriptionId } = msg.payload;
