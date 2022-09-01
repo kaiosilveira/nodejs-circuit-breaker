@@ -1,25 +1,24 @@
-import { LeakyBucketImpl } from '.';
-import { LeakyBucketMessages } from './messages';
-import { LeakyBucketMessage } from './types';
+import { LeakyBucketImpl } from './leaky-bucket';
+import { LeakyBucketMessage, LeakyBucketMessageTypes } from './messages';
 
 const bucket = new LeakyBucketImpl();
 
 process.on('message', (msg: LeakyBucketMessage) => {
   const { subscriptionId } = msg.payload;
   switch (msg.type) {
-    case LeakyBucketMessages.REGISTER:
+    case LeakyBucketMessageTypes.REGISTER:
       bucket.subscribe({ subscriptionId, threshold: msg.payload.threshold });
       break;
-    case LeakyBucketMessages.NEW_FAILURE:
+    case LeakyBucketMessageTypes.NEW_FAILURE:
       bucket.increment({ subscriptionId });
       if (bucket.isAboveThreshold({ subscriptionId })) {
         process.send?.({
-          type: LeakyBucketMessages.THRESHOLD_VIOLATION,
+          type: LeakyBucketMessageTypes.THRESHOLD_VIOLATION,
           payload: { subscriptionId },
         });
       }
       break;
-    case LeakyBucketMessages.RESET:
+    case LeakyBucketMessageTypes.RESET:
       bucket.resetCountFor({ subscriptionId });
       break;
     default:
@@ -32,7 +31,7 @@ setInterval(() => {
     const currentCount = bucket.fetchCountFor({ subscriptionId });
     const threshold = bucket.fetchThresholdFor({ subscriptionId });
     if (currentCount - threshold === 1) {
-      process.send?.({ type: LeakyBucketMessages.THRESHOLD_RESTORED, subscriptionId });
+      process.send?.({ type: LeakyBucketMessageTypes.THRESHOLD_RESTORED, subscriptionId });
     }
     bucket.decrement({ subscriptionId });
   });
