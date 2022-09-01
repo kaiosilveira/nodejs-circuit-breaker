@@ -339,9 +339,9 @@ setInterval(processManager.handleTick, processManager.getTickIntervalInMs());
 The code above basically means that for every tick of the interval we will be decrementing `1` from the counters of each subscription. This is done inside the `handleTick` function, which does a few things:
 
 - goes over each subscription
-  -- decrements it
-  -- checks if the current `counter - threshold` is equal `1`
-  -- if so, send a message to the main process notifying that the control level was restored
+  - decrements it
+  - checks if the current `counter - threshold` is equal `1`
+  - if so, send a message to the main process notifying that the control level was restored
 
 Below there's the actual implementation:
 
@@ -363,4 +363,33 @@ handleTick(): void {
 
 ## Faking a remote service having trouble
 
+To fake a `TransactionHistoryService` under trouble, we're going to use our [TransactionHistoryService](src/app/services/transaction-history/fake/index.ts). This fake returns a failure in every fourth response if the circuit breaker status is not `OPEN`. With this, we can simulate "random" failures from a remote service and can test that our circuit breaker is behaving as expected.
+
 ## Taking the kid to the playground
+
+To "manually" test our circuit breaker, we are going to use `loadtest`. With that, we will simply send 10 requests per second targeting the transaction history endpoint, which will eventually cause the fake service mentioned above to fail often enough to trip the circuit breaker:
+
+```console
+loadtest --rps 10 'http://localhost:3000/transaction-history/mine'
+```
+
+We can see in the logs that the circuit breaker opens after some failed requests, then it starts to refuse requests and, after a while, it recovers to `HALF_OPEN`, allowing new requests to throw trough:
+
+```console
+{ msg: 'Call refused from circuit breaker', status: 'open' }
+{ msg: 'Call refused from circuit breaker', status: 'open' }
+{ msg: 'Threshold restored. Moving circuit to half-open.', status: 'half_open' }
+{ msg: 'Successful response while in a HALF_OPEN state. Closing the circuit.', status: 'half_open' }
+{ msg: 'Successful response', status: 'closed' }
+{ msg: 'Successful response', status: 'closed' }
+{ msg: 'Failed to execute' }
+{ msg: 'Threshold violated. Opening circuit.' }
+{ msg: 'Call refused from circuit breaker', status: 'open' }
+{ msg: 'Call refused from circuit breaker', status: 'open' }
+{ msg: 'Call refused from circuit breaker', status: 'open' }
+{ msg: 'Call refused from circuit breaker', status: 'open' }
+{ msg: 'Call refused from circuit breaker', status: 'open' }
+{ msg: 'Call refused from circuit breaker', status: 'open' }
+{ msg: 'Threshold restored. Moving circuit to half-open.', status: 'half_open' }
+{ msg: 'Successful response while in a HALF_OPEN state. Closing the circuit.', status: 'half_open' }
+```

@@ -2,11 +2,11 @@ import * as http from 'http';
 import * as ChildProcess from 'child_process';
 
 import InMemoryApplicationState from '../app/infra/application-state/in-memory';
-import ManagedWinstonLogger from '../app/infra/logger/winston';
 import ExpressAppFactory from '../interface-adapters/express';
+import { ConsoleLogger } from '../app/infra/logger';
 
 const PORT: number = 3000;
-const logger = new ManagedWinstonLogger({ defaultMeta: { object: 'global' } });
+const logger = new ConsoleLogger();
 const applicationState = new InMemoryApplicationState();
 const LeakyBucket = ChildProcess.fork('./src/app/infra/leaky-bucket');
 
