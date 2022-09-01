@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import ILogger from '../../../../app/infra/logger';
-import TransactionHistoryService from '../../../../app/services/transaction-history';
+import ILogger from '../../../../../app/infra/logger';
+import TransactionHistoryService from '../../../../../app/services/transaction-history';
 
 export default class TransactionHistoryController {
   logger: ILogger;

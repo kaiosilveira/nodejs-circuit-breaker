@@ -1,10 +1,10 @@
 import { ChildProcess } from 'child_process';
 import { Router } from 'express';
-import ApplicationState from '../../../app/infra/application-state';
-import ILogger from '../../../app/infra/logger';
-import FakeTransactionHistoryService from '../../../app/services/transaction-history/fake';
-import ExpressCircuitBreaker from '../../../interface-adapters/express/circuit-breaker';
-import TransactionHistoryController from '../../../interface-adapters/express/controllers/transaction-history';
+import ApplicationState from '../../../../app/infra/application-state';
+import ILogger from '../../../../app/infra/logger';
+import FakeTransactionHistoryService from '../../../../app/services/transaction-history/fake';
+import ExpressCircuitBreaker from '../../circuit-breaker';
+import TransactionHistoryController from './controller';
 
 export type TransactionHistoryResourceProps = {
   router: Router;
