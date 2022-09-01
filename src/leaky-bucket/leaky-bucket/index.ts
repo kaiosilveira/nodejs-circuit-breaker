@@ -23,7 +23,6 @@ export class LeakyBucketImpl implements LeakyBucket {
   constructor() {
     this.COUNTERS = {};
 
-    this.isSubscriptionIdRegistered = this.isSubscriptionIdRegistered.bind(this);
     this.subscribe = this.subscribe.bind(this);
     this.fetchSubscriptionIds = this.fetchSubscriptionIds.bind(this);
     this.fetchThresholdFor = this.fetchThresholdFor.bind(this);
@@ -32,6 +31,9 @@ export class LeakyBucketImpl implements LeakyBucket {
     this.decrement = this.decrement.bind(this);
     this.resetCountFor = this.resetCountFor.bind(this);
     this.isAboveThreshold = this.isAboveThreshold.bind(this);
+
+    this.isSubscriptionIdRegistered = this.isSubscriptionIdRegistered.bind(this);
+    this.validateSubscriptionId = this.validateSubscriptionId.bind(this);
   }
 
   subscribe({
@@ -54,41 +56,36 @@ export class LeakyBucketImpl implements LeakyBucket {
   }
 
   fetchCountFor({ subscriptionId }: { subscriptionId: string }): number {
-    if (!this.isSubscriptionIdRegistered(subscriptionId))
-      throw new SubscriptionIdNotRegisteredError();
-
+    this.validateSubscriptionId(subscriptionId);
     return this.COUNTERS[subscriptionId].current;
   }
 
   increment({ subscriptionId }: { subscriptionId: string }): void {
-    if (!this.isSubscriptionIdRegistered(subscriptionId))
-      throw new SubscriptionIdNotRegisteredError();
-
+    this.validateSubscriptionId(subscriptionId);
     this.COUNTERS[subscriptionId].current += 1;
   }
 
   decrement({ subscriptionId }: { subscriptionId: string }): void {
-    if (!this.isSubscriptionIdRegistered(subscriptionId))
-      throw new SubscriptionIdNotRegisteredError();
-
+    this.validateSubscriptionId(subscriptionId);
     this.COUNTERS[subscriptionId].current = Math.max(0, this.COUNTERS[subscriptionId].current - 1);
   }
 
   resetCountFor({ subscriptionId }: { subscriptionId: string }): void {
-    if (!this.isSubscriptionIdRegistered(subscriptionId))
-      throw new SubscriptionIdNotRegisteredError();
-
+    this.validateSubscriptionId(subscriptionId);
     this.COUNTERS[subscriptionId].current = 0;
   }
 
   isAboveThreshold({ subscriptionId }: { subscriptionId: string }): Boolean {
-    if (!this.isSubscriptionIdRegistered(subscriptionId))
-      throw new SubscriptionIdNotRegisteredError();
-
+    this.validateSubscriptionId(subscriptionId);
     return this.COUNTERS[subscriptionId].current > this.COUNTERS[subscriptionId].threshold;
   }
 
   private isSubscriptionIdRegistered(subscriptionId: string): Boolean {
     return Object.keys(this.COUNTERS).includes(subscriptionId);
+  }
+
+  private validateSubscriptionId(subscriptionId): void {
+    if (!this.isSubscriptionIdRegistered(subscriptionId))
+      throw new SubscriptionIdNotRegisteredError();
   }
 }
