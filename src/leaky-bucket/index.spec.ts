@@ -170,4 +170,16 @@ describe('LeakyBucket', () => {
       expect(isAbove).toEqual(true);
     });
   });
+
+  describe('fetchSubscriptionIds', () => {
+    it('should return all subscription ids', () => {
+      const bucket = new LeakyBucketImpl();
+      bucket.subscribe({ subscriptionId: '123' });
+      bucket.subscribe({ subscriptionId: '456' });
+
+      const subscriptionIds = bucket.fetchSubscriptionIds();
+
+      expect(subscriptionIds).toEqual(['123', '456']);
+    });
+  });
 });

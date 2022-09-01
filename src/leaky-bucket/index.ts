@@ -28,6 +28,10 @@ export class LeakyBucketImpl implements LeakyBucket {
     this.COUNTERS[subscriptionId] = { current: 0, threshold: threshold };
   }
 
+  fetchSubscriptionIds(): string[] {
+    return this.subscriptions;
+  }
+
   fetchThresholdFor({ subscriptionId }: { subscriptionId: string }): number {
     return this.COUNTERS[subscriptionId].threshold;
   }
@@ -70,6 +74,7 @@ export class LeakyBucketImpl implements LeakyBucket {
 
 export default interface LeakyBucket {
   subscribe({ subscriptionId, threshold }: { subscriptionId: string; threshold?: number }): void;
+  fetchSubscriptionIds(): Array<string>;
   fetchThresholdFor({ subscriptionId }: { subscriptionId: string }): number;
   fetchCountFor({ subscriptionId }: { subscriptionId: string }): number;
   increment({ subscriptionId }: { subscriptionId: string }): void;
