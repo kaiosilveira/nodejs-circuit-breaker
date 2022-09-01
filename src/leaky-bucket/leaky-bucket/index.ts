@@ -18,7 +18,21 @@ export default interface LeakyBucket {
 }
 
 export class LeakyBucketImpl implements LeakyBucket {
-  COUNTERS = {};
+  COUNTERS: Object;
+
+  constructor() {
+    this.COUNTERS = {};
+
+    this.isSubscriptionIdRegistered = this.isSubscriptionIdRegistered.bind(this);
+    this.subscribe = this.subscribe.bind(this);
+    this.fetchSubscriptionIds = this.fetchSubscriptionIds.bind(this);
+    this.fetchThresholdFor = this.fetchThresholdFor.bind(this);
+    this.fetchCountFor = this.fetchCountFor.bind(this);
+    this.increment = this.increment.bind(this);
+    this.decrement = this.decrement.bind(this);
+    this.resetCountFor = this.resetCountFor.bind(this);
+    this.isAboveThreshold = this.isAboveThreshold.bind(this);
+  }
 
   private isSubscriptionIdRegistered(subscriptionId: string): Boolean {
     return Object.keys(this.COUNTERS).includes(subscriptionId);
