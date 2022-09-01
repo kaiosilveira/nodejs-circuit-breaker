@@ -13,7 +13,7 @@ import InMemoryApplicationState from './application-state/in-memory';
 const PORT: Number = 3000;
 const app = Express();
 
-const LeakyBucket = ChildProcess.fork(`${Path.resolve(__dirname)}/leaky-bucket/process-definition`);
+const LeakyBucket = ChildProcess.fork(`${Path.resolve(__dirname)}/leaky-bucket/index`);
 
 const applicationState = new InMemoryApplicationState();
 
