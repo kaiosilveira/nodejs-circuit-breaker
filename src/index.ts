@@ -3,12 +3,14 @@ import * as Path from 'path';
 import * as ChildProcess from 'child_process';
 import Express from 'express';
 
-import { ConsoleLogger } from './monitoring/logger';
-
 import ExpressCircuitBreaker from './circuit-breaker/express';
 import TransactionHistoryResolver from './resolvers/transaction-resolver';
 import FakeTransactionHistoryService from './services/transaction-history/fake';
 import InMemoryApplicationState from './application-state/in-memory';
+
+import ManagedWinstonLogger from './monitoring/logger/winston';
+
+const logger = new ManagedWinstonLogger({ defaultMeta: { object: 'global' } });
 
 const PORT: Number = 3000;
 const app = Express();
@@ -19,14 +21,14 @@ const applicationState = new InMemoryApplicationState();
 
 const transactionHistoryCircuitBreaker = new ExpressCircuitBreaker({
   bucket: LeakyBucket,
-  logger: new ConsoleLogger(),
+  logger: logger.child({ defaultMeta: { object: 'ExpressCircuitBreaker' } }),
   config: { resourceName: 'transaction-history', threshold: 10 },
 });
 
 applicationState.registerCircuitBreaker(transactionHistoryCircuitBreaker);
 
 const transactionHistoryResolver = new TransactionHistoryResolver({
-  logger: new ConsoleLogger(),
+  logger: logger.child({ defaultMeta: { object: 'ExpressCircuitBreaker' } }),
   transactionHistoryService: new FakeTransactionHistoryService({ applicationState }),
 });
 
