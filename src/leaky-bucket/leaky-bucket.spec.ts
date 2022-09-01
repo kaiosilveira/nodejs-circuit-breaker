@@ -1,4 +1,4 @@
-import { LeakyBucketImpl } from '.';
+import { LeakyBucketImpl } from './leaky-bucket';
 
 describe('LeakyBucket', () => {
   describe('subscribe', () => {

@@ -6,6 +6,17 @@ class SubscriptionIdNotRegisteredError extends Error {
 
 export const DEFAULT_THRESHOLD = 100;
 
+export default interface LeakyBucket {
+  subscribe({ subscriptionId, threshold }: { subscriptionId: string; threshold?: number }): void;
+  fetchSubscriptionIds(): Array<string>;
+  fetchThresholdFor({ subscriptionId }: { subscriptionId: string }): number;
+  fetchCountFor({ subscriptionId }: { subscriptionId: string }): number;
+  increment({ subscriptionId }: { subscriptionId: string }): void;
+  decrement({ subscriptionId }: { subscriptionId: string }): void;
+  resetCountFor({ subscriptionId }: { subscriptionId: string }): void;
+  isAboveThreshold({ subscriptionId }: { subscriptionId: string }): Boolean;
+}
+
 export class LeakyBucketImpl implements LeakyBucket {
   COUNTERS = {};
 
@@ -70,15 +81,4 @@ export class LeakyBucketImpl implements LeakyBucket {
 
     return this.COUNTERS[subscriptionId].current > this.COUNTERS[subscriptionId].threshold;
   }
-}
-
-export default interface LeakyBucket {
-  subscribe({ subscriptionId, threshold }: { subscriptionId: string; threshold?: number }): void;
-  fetchSubscriptionIds(): Array<string>;
-  fetchThresholdFor({ subscriptionId }: { subscriptionId: string }): number;
-  fetchCountFor({ subscriptionId }: { subscriptionId: string }): number;
-  increment({ subscriptionId }: { subscriptionId: string }): void;
-  decrement({ subscriptionId }: { subscriptionId: string }): void;
-  resetCountFor({ subscriptionId }: { subscriptionId: string }): void;
-  isAboveThreshold({ subscriptionId }: { subscriptionId: string }): Boolean;
 }
