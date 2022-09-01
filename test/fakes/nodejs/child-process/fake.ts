@@ -1,5 +1,5 @@
 import { ChildProcess } from 'child_process';
-import { CallbackRegistry } from '../../../../src/app/tooling/generic-types';
+import { CallbackRegistry } from '../../../../src/app/tooling/callback-registry';
 
 export default class FakeChildProcess extends ChildProcess {
   _callbacks: CallbackRegistry;
