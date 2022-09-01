@@ -15,6 +15,8 @@ Remaining things to implement:
 - Differ circuit breaker failures from normal failures
 - fallback to last cached result in case the transaction-history-service is down
 - endpoints to fetch application state
+- document fake services
+- document load tests
 
 # Hypothetical domain
 
@@ -157,24 +159,35 @@ class ExpressCircuitBreaker {
 ```
 
 ```typescript
-// LeakyBucketProcess
-process.on('message', (msg: LeakyBucketMessage) => {
-  const { subscriptionId } = msg.payload;
-  switch (msg.type) {
-    // ...
-    case 'NEW_FAILURE':
-      bucket.increment({ subscriptionId });
-    // ...
+class LeakyBucketProcessManager {
+  // ...some code...
+
+  private handleNewFailureMessage(msg: LeakyBucketMessage): void {
+    const { subscriptionId } = msg.payload;
+    this._bucket.increment({ subscriptionId });
+    // some other code ...
   }
-  // ...
-});
+
+  // more code...
+}
 ```
 
 This happens until the bucket starts leaking, i.e., when the failure count is high enough to go above the specified threshold, which will cause the bucket to report a `THRESHOLD_VIOLATION` event back to the main process:
 
 ```typescript
-if (bucket.isAboveThreshold({ subscriptionId })) {
-  process.send?.({ type: 'THRESHOLD_VIOLATION', payload: { subscriptionId } });
+class LeakyBucketProcessManager {
+  // ...some code...
+  private handleNewFailureMessage(msg: LeakyBucketMessage): void {
+    // some other code ...
+    if (this._bucket.isAboveThreshold({ subscriptionId })) {
+      this._processRef.send?.({
+        type: LeakyBucketMessageTypes.THRESHOLD_VIOLATION,
+        payload: { subscriptionId },
+      });
+    }
+  }
+
+  // more code...
 }
 ```
 
@@ -334,16 +347,20 @@ Below there's the actual implementation:
 
 ```typescript
 handleTick(): void {
-    this._bucket.fetchSubscriptionIds().forEach((subscriptionId: string) => {
-      const currentCount = this._bucket.fetchCountFor({ subscriptionId });
-      const threshold = this._bucket.fetchThresholdFor({ subscriptionId });
-      if (currentCount - threshold === 1) {
-        this._processRef.send?.({
-          type: LeakyBucketMessageTypes.THRESHOLD_RESTORED,
-          subscriptionId,
-        });
-      }
-      this._bucket.decrement({ subscriptionId });
-    });
-  }
+  this._bucket.fetchSubscriptionIds().forEach((subscriptionId: string) => {
+    const currentCount = this._bucket.fetchCountFor({ subscriptionId });
+    const threshold = this._bucket.fetchThresholdFor({ subscriptionId });
+    if (currentCount - threshold === 1) {
+      this._processRef.send?.({
+        type: LeakyBucketMessageTypes.THRESHOLD_RESTORED,
+        subscriptionId,
+      });
+    }
+    this._bucket.decrement({ subscriptionId });
+  });
+}
 ```
+
+## Faking a remote service having trouble
+
+## Taking the kid to the playground

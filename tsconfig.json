@@ -4,6 +4,9 @@
   "exclude": ["node_modules", "src/**/*.spec.ts"],
   "compilerOptions": {
     "outDir": "dist",
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "paths": {
+      "@app/*": ["./src/app/*"]
+    }
   }
 }

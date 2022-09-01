@@ -6,10 +6,10 @@
   "author": "Kaio Silveira <silveira.kaio@icloud.com>",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node src",
+    "start": "ts-node src/web",
     "build": "rimraf ./dist && tsc",
     "test:unit": "jest",
-    "serve": "node ./dist/index.js"
+    "serve": "node ./dist/web/index.js"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
