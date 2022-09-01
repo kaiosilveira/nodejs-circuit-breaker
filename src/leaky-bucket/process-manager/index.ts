@@ -27,29 +27,10 @@ export class LeakyBucketProcessManagerImpl implements LeakyBucketProcessManager 
     this.handleMessage = this.handleMessage.bind(this);
     this.handleTick = this.handleTick.bind(this);
     this.getTickIntervalInMs = this.getTickIntervalInMs.bind(this);
-  }
 
-  handleMessage(msg: LeakyBucketMessage): void {
-    const { subscriptionId } = msg.payload;
-    switch (msg.type) {
-      case LeakyBucketMessageTypes.REGISTER:
-        this._bucket.subscribe({ subscriptionId, threshold: msg.payload.threshold });
-        break;
-      case LeakyBucketMessageTypes.NEW_FAILURE:
-        this._bucket.increment({ subscriptionId });
-        if (this._bucket.isAboveThreshold({ subscriptionId })) {
-          this._processRef.send?.({
-            type: LeakyBucketMessageTypes.THRESHOLD_VIOLATION,
-            payload: { subscriptionId },
-          });
-        }
-        break;
-      case LeakyBucketMessageTypes.RESET:
-        this._bucket.resetCountFor({ subscriptionId });
-        break;
-      default:
-        break;
-    }
+    this.handleRegisterMessage = this.handleRegisterMessage.bind(this);
+    this.handleNewFailureMessage = this.handleNewFailureMessage.bind(this);
+    this.handleResetMessage = this.handleResetMessage.bind(this);
   }
 
   handleTick(): void {
@@ -68,5 +49,42 @@ export class LeakyBucketProcessManagerImpl implements LeakyBucketProcessManager 
 
   getTickIntervalInMs(): number {
     return this._tickIntervalMs;
+  }
+
+  handleMessage(msg: LeakyBucketMessage): void {
+    switch (msg.type) {
+      case LeakyBucketMessageTypes.REGISTER:
+        this.handleRegisterMessage(msg);
+        break;
+      case LeakyBucketMessageTypes.NEW_FAILURE:
+        this.handleNewFailureMessage(msg);
+        break;
+      case LeakyBucketMessageTypes.RESET:
+        this.handleResetMessage(msg);
+        break;
+      default:
+        break;
+    }
+  }
+
+  private handleRegisterMessage(msg: LeakyBucketMessage): void {
+    const { subscriptionId, threshold } = msg.payload;
+    this._bucket.subscribe({ subscriptionId, threshold });
+  }
+
+  private handleNewFailureMessage(msg: LeakyBucketMessage): void {
+    const { subscriptionId } = msg.payload;
+    this._bucket.increment({ subscriptionId });
+    if (this._bucket.isAboveThreshold({ subscriptionId })) {
+      this._processRef.send?.({
+        type: LeakyBucketMessageTypes.THRESHOLD_VIOLATION,
+        payload: { subscriptionId },
+      });
+    }
+  }
+
+  private handleResetMessage(msg: LeakyBucketMessage): void {
+    const { subscriptionId } = msg.payload;
+    this._bucket.resetCountFor({ subscriptionId });
   }
 }
