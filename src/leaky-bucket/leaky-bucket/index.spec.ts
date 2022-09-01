@@ -15,8 +15,9 @@ describe('LeakyBucket', () => {
 
       bucket.subscribe({ subscriptionId });
 
-      expect(bucket.subscriptions).toHaveLength(1);
-      expect(bucket.subscriptions[0]).toEqual(subscriptionId);
+      const subscriptionIds = bucket.fetchSubscriptionIds();
+      expect(subscriptionIds).toHaveLength(1);
+      expect(subscriptionIds[0]).toEqual(subscriptionId);
     });
 
     it('should set the default threshold as 100', () => {

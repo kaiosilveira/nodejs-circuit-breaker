@@ -20,10 +20,6 @@ export default interface LeakyBucket {
 export class LeakyBucketImpl implements LeakyBucket {
   COUNTERS = {};
 
-  get subscriptions() {
-    return Object.keys(this.COUNTERS);
-  }
-
   private isSubscriptionIdRegistered(subscriptionId: string): Boolean {
     return Object.keys(this.COUNTERS).includes(subscriptionId);
   }
@@ -40,7 +36,7 @@ export class LeakyBucketImpl implements LeakyBucket {
   }
 
   fetchSubscriptionIds(): string[] {
-    return this.subscriptions;
+    return Object.keys(this.COUNTERS);
   }
 
   fetchThresholdFor({ subscriptionId }: { subscriptionId: string }): number {
