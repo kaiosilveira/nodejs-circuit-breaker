@@ -5,7 +5,7 @@ class SubscriptionIdNotRegisteredError extends Error {
 }
 
 export const DEFAULT_THRESHOLD = 100;
-class LeakyBucket {
+export default class LeakyBucket {
   COUNTERS = {};
 
   get subscriptions() {
@@ -66,5 +66,3 @@ class LeakyBucket {
     return this.COUNTERS[subscriptionId].current > this.COUNTERS[subscriptionId].threshold;
   }
 }
-
-export default LeakyBucket;
