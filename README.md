@@ -11,9 +11,10 @@ This repository is an example implementation of a Circuit Breaker, as described 
 Remaining things to implement:
 
 - Endpoints for directly tripping the circuit breaker
-- Differ circuit breaker failures from normal failures
 - Improve logging
+- Differ circuit breaker failures from normal failures
 - fallback to last cached result in case the transaction-history-service is down
+- endpoints to fetch application state
 
 # Hypothetical domain
 
@@ -21,7 +22,7 @@ A banking app was chosen to be the hypothetical domain for this implementation. 
 
 # Implementation details
 
-This implementation posed some interesting technical challenges, specially on handling the decrementing of the counters, as node is a single-thread language. The solution for the counters was to abstract it into the [leaky-bucket/process-definition.ts](./src/leaky-bucket/process-definition.ts) child process, which wraps a [LeakyBucket](./src/leaky-bucket/index.ts) class, that holds the counters for all registered clients. The registration is done via inter-process communication using event emitters, and the counters are infinitely decremented using a `setInterval` loop, with a minimum of `0` for each counter:
+This implementation posed some interesting technical challenges, specially on handling the decrementing of the counters, as node is a single-thread language. The solution for the counters was to abstract it into a [child process](./src/leaky-bucket/index.ts), which wraps a [LeakyBucket](./src/leaky-bucket/leaky-bucket/index.ts) class that holds the counters for all registered clients. The registration is done via inter-process communication using event emitters, and the counters are infinitely decremented using a `setInterval` loop, with a minimum of `0` for each counter:
 
 ```typescript
 Math.max(0, this.COUNTERS[subscriptionId].current - 1);
@@ -156,7 +157,7 @@ class ExpressCircuitBreaker {
 ```
 
 ```typescript
-// LeakyBUcketProcess
+// LeakyBucketProcess
 process.on('message', (msg: LeakyBucketMessage) => {
   const { subscriptionId } = msg.payload;
   switch (msg.type) {
@@ -254,6 +255,95 @@ class ExpressCircuitBreaker extends EventEmitter implements CircuitBreaker {
 
 In the `HALF_OPEN` state, the next response decides wether new requests will be allowed to flow though again (if `statusCode: 200`) or will continue being denied (if `statusCode: 500`).
 
-### The Leaky Bucket pattern
+## The Leaky Bucket
 
-### The State pattern
+The `LeakyBucket` class controls the lifecycle of the counters for a given `subscriptionId`. As mentioned above, this class is used by a process manager that runs as a child-process and communicates to the main process whenever needed. The `LeakyBucket` interface is pretty straightforward:
+
+```typescript
+interface LeakyBucket {
+  subscribe({ subscriptionId, threshold }: { subscriptionId: string; threshold?: number }): void;
+  fetchThresholdFor({ subscriptionId }: { subscriptionId: string }): number;
+  fetchCountFor({ subscriptionId }: { subscriptionId: string }): number;
+  increment({ subscriptionId }: { subscriptionId: string }): void;
+  decrement({ subscriptionId }: { subscriptionId: string }): void;
+  resetCountFor({ subscriptionId }: { subscriptionId: string }): void;
+  isAboveThreshold({ subscriptionId }: { subscriptionId: string }): Boolean;
+}
+```
+
+And the corresponding `LeakyBucketProcessManager` looks also pretty simple:
+
+```typescript
+interface LeakyBucketProcessManager {
+  handleMessage(msg: LeakyBucketMessage): void;
+  handleTick(): void;
+  getTickIntervalInMs(): number;
+}
+```
+
+To start the magic, we need to create a new instance of `LeakyBucketProcessManager` and give it a `LeakyBucket`, a value for `tickIntervalMs` and a `ref` to the process:
+
+```typescript
+const processManager = new LeakyBucketProcessManagerImpl({
+  processRef: process,
+  bucket: new LeakyBucketImpl(),
+  tickIntervalMs: 1000,
+});
+```
+
+Then, we need to plug its `handleMessage` method into the `process.on('message', fn)` so we can listen to messages from the main process:
+
+```typescript
+process.on('message', processManager.handleMessage);
+```
+
+The `handleMessage` method knows how to manipulate the `LeakyBucket` instance according to the type of message received. It looks like this:
+
+```typescript
+handleMessage(msg: LeakyBucketMessage): void {
+  switch (msg.type) {
+    case LeakyBucketMessageTypes.REGISTER:
+      this.handleRegisterMessage(msg);
+      break;
+    case LeakyBucketMessageTypes.NEW_FAILURE:
+      this.handleNewFailureMessage(msg);
+      break;
+    case LeakyBucketMessageTypes.RESET:
+      this.handleResetMessage(msg);
+      break;
+    default:
+      break;
+  }
+}
+```
+
+Finally, we can set up the infinity loop using a `setInterval` statement to decrement the counters in an interval of `tickIntervalMs`:
+
+```typescript
+setInterval(processManager.handleTick, processManager.getTickIntervalInMs());
+```
+
+The code above basically means that for every tick of the interval we will be decrementing `1` from the counters of each subscription. This is done inside the `handleTick` function, which does a few things:
+
+- goes over each subscription
+  -- decrements it
+  -- checks if the current `counter - threshold` is equal `1`
+  -- if so, send a message to the main process notifying that the control level was restored
+
+Below there's the actual implementation:
+
+```typescript
+handleTick(): void {
+    this._bucket.fetchSubscriptionIds().forEach((subscriptionId: string) => {
+      const currentCount = this._bucket.fetchCountFor({ subscriptionId });
+      const threshold = this._bucket.fetchThresholdFor({ subscriptionId });
+      if (currentCount - threshold === 1) {
+        this._processRef.send?.({
+          type: LeakyBucketMessageTypes.THRESHOLD_RESTORED,
+          subscriptionId,
+        });
+      }
+      this._bucket.decrement({ subscriptionId });
+    });
+  }
+```
