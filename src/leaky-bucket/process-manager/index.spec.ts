@@ -1,5 +1,5 @@
 import LeakyBucket from '../leaky-bucket';
-import { LeakyBucketProcessImpl } from '.';
+import { LeakyBucketProcessManagerImpl } from '.';
 import { LeakyBucketMessageTypes } from '../messages';
 
 class FakeLeakyBucket implements LeakyBucket {
@@ -40,7 +40,7 @@ describe('LeakyBucketProcessImpl', () => {
       it('should register a subscription into the bucket', () => {
         const threshold = 50;
         const bucket = new FakeLeakyBucket();
-        const process = new LeakyBucketProcessImpl({ bucket, processRef, tickIntervalMs });
+        const process = new LeakyBucketProcessManagerImpl({ bucket, processRef, tickIntervalMs });
 
         const spyOnSubscribe = jest.spyOn(bucket, 'subscribe');
         const msg = {
@@ -65,7 +65,7 @@ describe('LeakyBucketProcessImpl', () => {
           payload: { subscriptionId },
         };
 
-        const process = new LeakyBucketProcessImpl({ bucket, tickIntervalMs, processRef });
+        const process = new LeakyBucketProcessManagerImpl({ bucket, tickIntervalMs, processRef });
         process.handleMessage(msg);
 
         expect(spyOnIncrement).toHaveBeenCalledTimes(1);
@@ -76,7 +76,7 @@ describe('LeakyBucketProcessImpl', () => {
         const bucket = new FakeLeakyBucket();
         jest.spyOn(bucket, 'isAboveThreshold').mockReturnValue(true);
 
-        const process = new LeakyBucketProcessImpl({ bucket, processRef, tickIntervalMs });
+        const process = new LeakyBucketProcessManagerImpl({ bucket, processRef, tickIntervalMs });
         const spyOnSend = jest.spyOn(processRef, 'send');
 
         const msg = {
@@ -104,7 +104,7 @@ describe('LeakyBucketProcessImpl', () => {
           payload: { subscriptionId },
         };
 
-        const process = new LeakyBucketProcessImpl({ bucket, tickIntervalMs, processRef });
+        const process = new LeakyBucketProcessManagerImpl({ bucket, tickIntervalMs, processRef });
         process.handleMessage(msg);
 
         expect(spyOnResetCount).toHaveBeenCalledTimes(1);
@@ -116,7 +116,7 @@ describe('LeakyBucketProcessImpl', () => {
   describe('getTickIntervalInMs', () => {
     it('should return the configured tickIntervalMs', () => {
       const tickIntervalMs = 500;
-      const processManager = new LeakyBucketProcessImpl({
+      const processManager = new LeakyBucketProcessManagerImpl({
         tickIntervalMs,
         bucket: new FakeLeakyBucket(),
         processRef: process,

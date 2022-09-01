@@ -1,7 +1,7 @@
 import { LeakyBucketImpl } from './leaky-bucket';
-import { LeakyBucketProcessImpl } from './process';
+import { LeakyBucketProcessManagerImpl } from './process-manager';
 
-const processManager = new LeakyBucketProcessImpl({
+const processManager = new LeakyBucketProcessManagerImpl({
   processRef: process,
   bucket: new LeakyBucketImpl(),
   tickIntervalMs: 1000,

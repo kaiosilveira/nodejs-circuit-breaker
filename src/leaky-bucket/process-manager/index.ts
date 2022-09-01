@@ -2,20 +2,24 @@ import LeakyBucket from '../leaky-bucket';
 import { LeakyBucketMessageTypes } from '../messages';
 import { LeakyBucketMessage } from '../messages';
 
-export default interface LeakyBucketProcess {}
+export default interface LeakyBucketProcessManager {
+  handleMessage(msg: LeakyBucketMessage): void;
+  handleTick(): void;
+  getTickIntervalInMs(): number;
+}
 
-export type LeakyBucketProcessProps = {
+export type LeakyBucketProcessManagerProps = {
   bucket: LeakyBucket;
   tickIntervalMs: number;
   processRef: NodeJS.Process;
 };
 
-export class LeakyBucketProcessImpl implements LeakyBucketProcess {
+export class LeakyBucketProcessManagerImpl implements LeakyBucketProcessManager {
   _tickIntervalMs: number;
   _bucket: LeakyBucket;
   _processRef: NodeJS.Process;
 
-  constructor({ bucket, tickIntervalMs, processRef }: LeakyBucketProcessProps) {
+  constructor({ bucket, tickIntervalMs, processRef }: LeakyBucketProcessManagerProps) {
     this._bucket = bucket;
     this._tickIntervalMs = tickIntervalMs;
     this._processRef = processRef;
