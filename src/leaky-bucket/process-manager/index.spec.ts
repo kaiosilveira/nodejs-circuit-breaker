@@ -1,32 +1,6 @@
-import LeakyBucket from '../leaky-bucket';
 import { LeakyBucketProcessManagerImpl } from '.';
 import { LeakyBucketMessageTypes } from '../messages';
-
-class FakeLeakyBucket implements LeakyBucket {
-  fetchSubscriptionIds(): string[] {
-    return [];
-  }
-
-  fetchThresholdFor(_: { subscriptionId: string }): number {
-    return 1;
-  }
-
-  fetchCountFor(_: { subscriptionId: string }): number {
-    return 1;
-  }
-
-  isAboveThreshold(_: { subscriptionId: string }): Boolean {
-    return false;
-  }
-
-  subscribe(_: { subscriptionId: string; threshold?: number | undefined }): void {}
-
-  increment(_: { subscriptionId: string }): void {}
-
-  decrement(_: { subscriptionId: string }): void {}
-
-  resetCountFor(_: { subscriptionId: string }): void {}
-}
+import FakeLeakyBucket from '../leaky-bucket/fake';
 
 describe('LeakyBucketProcessImpl', () => {
   const processRef = process;
