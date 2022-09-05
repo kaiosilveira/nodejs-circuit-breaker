@@ -20,4 +20,6 @@ export default class FakeExpressResponse extends EventEmitter {
   json(obj: any): any {
     return { body: obj, status: this.statusCode };
   }
+
+  end() {}
 }
