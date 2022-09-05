@@ -8,6 +8,13 @@ export default class FakeApplicationState implements ApplicationState {
   constructor() {
     this.circuitBreakerStates = {};
   }
+  setCircuitBreakerState({
+    circuitBreakerId,
+    state,
+  }: {
+    circuitBreakerId: string;
+    state: CircuitBreakerStatus;
+  }): void {}
 
   registerCircuitBreaker(_: circuitBreaker): void {}
 
@@ -18,6 +25,4 @@ export default class FakeApplicationState implements ApplicationState {
   isCircuitBreakerOpen(): boolean {
     return false;
   }
-
-  setCircuitBreakerOpen(_: boolean): void {}
 }
