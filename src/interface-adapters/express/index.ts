@@ -2,6 +2,7 @@ import { ChildProcess } from 'child_process';
 import Express from 'express';
 import ApplicationState from '../../app/infra/application-state';
 import ILogger from '../../app/infra/logger';
+import AdminResource from './resources/admin';
 
 import TransactionHistoryResource from './resources/transaction-history';
 
@@ -15,6 +16,9 @@ export default class ExpressAppFactory {
   static createApp({ bucket, logger, applicationState }) {
     const app = Express();
 
+    app.use(Express.json());
+
+    const adminResource = AdminResource.build({ applicationState, router: Express.Router() });
     const transactionHistoryResource = TransactionHistoryResource.build({
       router: Express.Router(),
       bucket: bucket,
@@ -23,6 +27,7 @@ export default class ExpressAppFactory {
     });
 
     app.use('/transaction-history', transactionHistoryResource.router);
+    app.use('/admin', adminResource.router);
 
     return app;
   }
