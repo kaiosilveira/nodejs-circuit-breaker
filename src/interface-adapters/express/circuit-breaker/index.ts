@@ -20,6 +20,12 @@ export type ExpressCircuitBreakerProps = {
   config: ExpressCircuitBreakerConfig;
 };
 
+export type ExpressCircuitBreakerDescription = {
+  circuitBreakerId: string;
+  resource: string;
+  state: CircuitBreakerStatus;
+};
+
 export default class ExpressCircuitBreaker extends EventEmitter implements CircuitBreaker {
   subscriptionId: string;
   logger: ILogger;
@@ -40,6 +46,7 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
     this.open = this.open.bind(this);
     this.halfOpen = this.halfOpen.bind(this);
     this.registerFailure = this.registerFailure.bind(this);
+    this.describe = this.describe.bind(this);
 
     this._setupLeakyBucket = this._setupLeakyBucket.bind(this);
     this._handleBucketMessage = this._handleBucketMessage.bind(this);
@@ -106,6 +113,14 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
       type: LeakyBucketMessageTypes.NEW_FAILURE,
       payload: { subscriptionId: this.subscriptionId },
     } as LeakyBucketMessage);
+  }
+
+  describe(): ExpressCircuitBreakerDescription {
+    return {
+      circuitBreakerId: this.getIdentifier(),
+      state: this.getStatus(),
+      resource: this.config.resourceName,
+    };
   }
 
   private _handleBucketMessage(msg: LeakyBucketMessage): void {

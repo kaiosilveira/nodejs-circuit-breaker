@@ -237,4 +237,23 @@ describe('CircuitBreaker', () => {
       });
     });
   });
+
+  describe('describe', () => {
+    it('should describe itself', () => {
+      const circuitBreaker = new ExpressCircuitBreaker({
+        bucket,
+        logger,
+        config: { resourceName: 'transactions', threshold: 10 },
+      });
+
+      circuitBreaker.halfOpen();
+
+      const result = circuitBreaker.describe();
+      expect(result).toEqual({
+        circuitBreakerId: 'transactions-circuit-breaker',
+        state: CircuitBreakerStatus.HALF_OPEN,
+        resource: 'transactions',
+      });
+    });
+  });
 });

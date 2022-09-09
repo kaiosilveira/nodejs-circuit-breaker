@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import CircuitBreaker from '..';
+import CircuitBreaker, { CircuitBreakerDescription } from '..';
 import { CircuitBreakerStatus } from '../status';
 
 export default class FakeCircuitBreaker extends EventEmitter implements CircuitBreaker {
@@ -10,6 +10,10 @@ export default class FakeCircuitBreaker extends EventEmitter implements CircuitB
     super();
     this._id = id;
     this._status = CircuitBreakerStatus.CLOSED;
+  }
+
+  describe(): CircuitBreakerDescription {
+    return { circuitBreakerId: this._id, state: this._status };
   }
 
   getStatus(): CircuitBreakerStatus {
