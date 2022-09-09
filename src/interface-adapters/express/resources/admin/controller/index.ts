@@ -10,6 +10,7 @@ export default class AdminController {
     this._appState = applicationState;
 
     this.setCircuitBreakerState = this.setCircuitBreakerState.bind(this);
+    this.describeCircuitBreakerStates = this.describeCircuitBreakerStates.bind(this);
   }
 
   setCircuitBreakerState(req: Request, res: Response): Response | void {
@@ -26,5 +27,9 @@ export default class AdminController {
 
     this._appState.setCircuitBreakerState({ circuitBreakerId, state });
     res.end();
+  }
+
+  describeCircuitBreakerStates(_: Request, res: Response): Response | void {
+    return res.json(this._appState.describeRegisteredCircuitBreakers());
   }
 }

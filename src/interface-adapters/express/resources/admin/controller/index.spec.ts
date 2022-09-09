@@ -3,6 +3,7 @@ import AdminController from '.';
 import FakeExpressRequest from '../../../../../../test/fakes/express/http/request';
 import FakeExpressResponse from '../../../../../../test/fakes/express/http/response/fake';
 import FakeApplicationState from '../../../../../app/infra/application-state/fake';
+import { CircuitBreakerDescription } from '../../../../../app/stability/circuit-breaker';
 import { CircuitBreakerStatus } from '../../../../../app/stability/circuit-breaker/status';
 
 describe('AdminController', () => {
@@ -81,6 +82,32 @@ describe('AdminController', () => {
 
       expect(spyOnSetCircuitBreakerState).toHaveBeenCalledTimes(1);
       expect(spyOnSetCircuitBreakerState).toHaveBeenCalledWith({ circuitBreakerId, state });
+    });
+  });
+
+  describe('describeCircuitBreakerStates', () => {
+    it('should return the state of all registered circuit breakers', () => {
+      const applicationState = new FakeApplicationState();
+      const describedCircuitBreakers = [
+        {
+          resource: 'transaction-history',
+          circuitBreakerId: 'transaction-history-cb',
+          state: CircuitBreakerStatus.HALF_OPEN,
+        },
+      ] as unknown as Array<CircuitBreakerDescription>;
+
+      jest
+        .spyOn(applicationState, 'describeRegisteredCircuitBreakers')
+        .mockReturnValue(describedCircuitBreakers);
+
+      const req = new FakeExpressRequest({ body: {} }) as unknown as Request;
+      const res = new FakeExpressResponse() as unknown as Response;
+
+      const spyOnJson = jest.spyOn(res, 'json');
+
+      new AdminController({ applicationState }).describeCircuitBreakerStates(req, res);
+
+      expect(spyOnJson).toHaveBeenCalledWith(describedCircuitBreakers);
     });
   });
 });
