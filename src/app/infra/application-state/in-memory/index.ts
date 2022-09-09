@@ -1,5 +1,5 @@
 import ApplicationState from '..';
-import CircuitBreaker from '../../../stability/circuit-breaker';
+import CircuitBreaker, { CircuitBreakerDescription } from '../../../stability/circuit-breaker';
 import { CircuitBreakerStatus } from '../../../stability/circuit-breaker/status';
 
 export default class InMemoryApplicationState implements ApplicationState {
@@ -44,5 +44,9 @@ export default class InMemoryApplicationState implements ApplicationState {
       default:
         break;
     }
+  }
+
+  describeRegisteredCircuitBreakers(): Array<CircuitBreakerDescription> {
+    return this._circuitBreakers.map(cb => cb.describe());
   }
 }

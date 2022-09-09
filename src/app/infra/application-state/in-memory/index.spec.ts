@@ -91,4 +91,20 @@ describe('InMemoryApplicationState', () => {
       expect(spyOnHalfOpen).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('describeRegisteredCircuitBreakers', () => {
+    it('should return a list containing all registered circuit breakers', () => {
+      const appState = new InMemoryApplicationState();
+      const transactionHistoryCircuitBreaker = new FakeCircuitBreaker({ id: 'cb-id-1' });
+
+      transactionHistoryCircuitBreaker.halfOpen();
+
+      appState.registerCircuitBreaker(transactionHistoryCircuitBreaker);
+
+      const result = appState.describeRegisteredCircuitBreakers();
+      expect(result).toEqual([
+        { circuitBreakerId: 'cb-id-1', state: CircuitBreakerStatus.HALF_OPEN },
+      ]);
+    });
+  });
 });
