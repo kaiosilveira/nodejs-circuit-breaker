@@ -17,6 +17,7 @@ export default class ExpressAppFactory {
     const app = Express();
 
     app.use(Express.json());
+    app.use(Express.urlencoded({ extended: true }));
 
     const adminResource = AdminResource.build({ applicationState, router: Express.Router() });
     const transactionHistoryResource = TransactionHistoryResource.build({
