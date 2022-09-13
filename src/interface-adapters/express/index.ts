@@ -1,7 +1,10 @@
 import { ChildProcess } from 'child_process';
+import { randomUUID } from 'crypto';
 import Express from 'express';
 import ApplicationState from '../../app/infra/application-state';
 import ILogger from '../../app/infra/logger';
+import IncomingRequestMiddleware from './middlewares/incoming-request';
+import OutgoingResponseMiddleware from './middlewares/outgoing-response';
 import AdminResource from './resources/admin';
 
 import TransactionHistoryResource from './resources/transaction-history';
@@ -18,6 +21,8 @@ export default class ExpressAppFactory {
 
     app.use(Express.json());
     app.use(Express.urlencoded({ extended: true }));
+    app.use(new IncomingRequestMiddleware({ logger, generateUUID: randomUUID }).hook);
+    app.use(new OutgoingResponseMiddleware({ logger }).hook);
 
     const adminResource = AdminResource.build({ applicationState, router: Express.Router() });
     const transactionHistoryResource = TransactionHistoryResource.build({
