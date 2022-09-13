@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import AdminController from '.';
 import FakeExpressRequest from '../../../../../../test/fakes/express/http/request';
-import FakeExpressResponse from '../../../../../../test/fakes/express/http/response/fake';
+import FakeExpressResponse from '../../../../../../test/fakes/express/http/response';
 import FakeApplicationState from '../../../../../app/infra/application-state/fake';
 import { CircuitBreakerDescription } from '../../../../../app/stability/circuit-breaker';
 import { CircuitBreakerStatus } from '../../../../../app/stability/circuit-breaker/status';

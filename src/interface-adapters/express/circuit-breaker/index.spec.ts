@@ -6,7 +6,7 @@ import FakeLogger from '../../../app/infra/logger/fake';
 import { CircuitBreakerEvents } from '../../../app/stability/circuit-breaker';
 import { CircuitBreakerStatus } from '../../../app/stability/circuit-breaker/status';
 import FakeChildProcess from '../../../../test/fakes/nodejs/child-process/fake';
-import FakeExpressResponse from '../../../../test/fakes/express/http/response/fake';
+import FakeExpressResponse from '../../../../test/fakes/express/http/response';
 
 describe('CircuitBreaker', () => {
   const threshold = 10;
