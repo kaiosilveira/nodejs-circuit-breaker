@@ -23,7 +23,13 @@ export default class InMemoryApplicationState implements ApplicationState {
     this._circuitBreakers.push(circuitBreaker);
   }
 
-  setCircuitBreakerState({ circuitBreakerId, state }): void {
+  setCircuitBreakerState({
+    circuitBreakerId,
+    state,
+  }: {
+    circuitBreakerId: string;
+    state: CircuitBreakerStatus;
+  }): void {
     const circuitBreaker = this._circuitBreakers.find(
       cb => cb.getIdentifier() === circuitBreakerId
     );
