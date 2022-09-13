@@ -364,6 +364,27 @@ To fake a `TransactionHistoryService` under trouble, we're going to use our [Tra
 
 ### Application state
 
+To keep track of all registered circuit breakers and to allow for direct manipulation of their states, an `ApplicationState` interface was defined:
+
+```typescript
+interface ApplicationState {
+  fetchCircuitBreakerState(circuitBreakerId: string): CircuitBreakerStatus;
+  registerCircuitBreaker(circuitBreaker: CircuitBreaker): void;
+  describeRegisteredCircuitBreakers(): Array<CircuitBreakerDescription>;
+  setCircuitBreakerState({
+    circuitBreakerId,
+    state,
+  }: {
+    circuitBreakerId: string;
+    state: CircuitBreakerStatus;
+  }): void;
+}
+```
+
+and an [in-memory representation](./src/app/infra/application-state/in-memory/index.ts) was implemented.
+
+This implementation acts as a middleman between the `admin` resource and the `CircuitBreaker`s themselves, allowing for HTTP requests to modify the current state of any circuit breaker.
+
 ### Taking the kid to the playground
 
 To "manually" test our circuit breaker, we are going to use `loadtest`. With that, we will simply send 10 requests per second targeting the transaction history endpoint, which will eventually cause the fake service mentioned above to fail often enough to trip the circuit breaker:
