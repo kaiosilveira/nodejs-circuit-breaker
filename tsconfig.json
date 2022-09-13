@@ -4,9 +4,7 @@
   "exclude": ["node_modules", "src/**/*.spec.ts"],
   "compilerOptions": {
     "outDir": "dist",
-    "noImplicitAny": false,
-    "paths": {
-      "@app/*": ["./src/app/*"]
-    }
-  }
+    "noImplicitAny": false
+  },
+  "files": ["./src/interface-adapters/express/custom.d.ts"]
 }
