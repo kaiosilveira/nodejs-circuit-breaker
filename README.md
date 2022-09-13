@@ -10,7 +10,6 @@ This repository is an example implementation of a Circuit Breaker, as described 
 
 Remaining things to implement:
 
-- Endpoints for directly tripping the circuit breaker
 - Improve logging
 - Differ circuit breaker failures from normal failures
 - fallback to last cached result in case the transaction-history-service is down
