@@ -24,7 +24,9 @@ export default class FakeTransactionHistoryService implements TransactionHistory
         reject({ msg: 'Service temporarily unavailable' });
       } else {
         this.counter++;
-        resolve([{ id: 1, amount: 100, date: new Date() }]);
+        resolve([
+          { id: 1, amount: parseInt((Math.random() * 99999).toString(), 10), date: new Date() },
+        ]);
       }
     });
   }
