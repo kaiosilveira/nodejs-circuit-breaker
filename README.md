@@ -10,18 +10,16 @@ This repository is an example implementation of a Circuit Breaker, as described 
 
 Remaining things to implement:
 
-- Improve logging
-- Differ circuit breaker failures from normal failures
 - fallback to last cached result in case the transaction-history-service is down
-- endpoints to fetch application state
 - document fake services
 - document load tests
+- document `ApplicationState`
 
-# Hypothetical domain
+## Hypothetical domain
 
 A banking app was chosen to be the hypothetical domain for this implementation. This app fetches transaction history data from the `TransactionHistoryService`, which is in a remote location. The circuit breaker was implemented to protect the app from displaying errored transaction pages to the users if the transaction history service is down. In such cases, the circuit breaker will return the last cached result for that specific user, only returning an error if there is a cache miss.
 
-# Implementation details
+## Implementation details
 
 This implementation posed some interesting technical challenges, specially on handling the decrementing of the counters, as node is a single-thread language. The solution for the counters was to abstract it into a [child process](./src/leaky-bucket/index.ts), which wraps a [LeakyBucket](./src/leaky-bucket/leaky-bucket/index.ts) class that holds the counters for all registered clients. The registration is done via inter-process communication using event emitters, and the counters are infinitely decremented using a `setInterval` loop, with a minimum of `0` for each counter:
 
@@ -29,7 +27,7 @@ This implementation posed some interesting technical challenges, specially on ha
 Math.max(0, this.COUNTERS[subscriptionId].current - 1);
 ```
 
-## Tech stack
+### Tech stack
 
 **Programming language**
 
@@ -43,11 +41,11 @@ Express was chosen as the web server framework for this implementation, its midd
 
 Jest was chosen as the test runner. Its built-in spying and stubbing structure allows for fast implementation of unit tests and its declarative expectation syntax allows for a readable and elegant test structure.
 
-## Test strategy
+### Test strategy
 
 As per default, unit tests were implemented for all files that contain logic.
 
-## Continuous Integration
+### Continuous Integration
 
 A continuous integration pipeline was put in place to make sure all additions to the `main` branch are healthy. The pipeline definition is pretty straightforward:
 
@@ -87,7 +85,7 @@ jobs:
 
 It install all the dependencies, build the project and run all unit tests.
 
-## The Circuit Breaker
+### The Circuit Breaker
 
 The `CircuitBreaker` interface is relatively simple (at least in its surface):
 
@@ -106,7 +104,7 @@ In our particular case, an [ExpressCircuitBreaker](./src/circuit-breaker/express
 
 `ExpressCircuitBreaker` also relies heavily on the [State Pattern](https://github.com/kaiosilveira/design-patterns/tree/main/state) to react to events when in different states without resorting to a many `switch` statements.
 
-### Closed circuit, requests flowing though
+#### Closed circuit, requests flowing though
 
 At bootstrap time, the circuit breaker sets its status to closed:
 
@@ -215,11 +213,11 @@ class ExpressCircuitBreaker extends EventEmitter implements CircuitBreaker {
 }
 ```
 
-### External service is misbehaving, circuit is opened
+#### External service is misbehaving, circuit is opened
 
 When the circuit is `OPEN`, all requests will be blocked and the endpoint will fail fast.
 
-#### Failing fast
+##### Failing fast
 
 One of the main reasons to implement a Circuit Breaker is to be able to fail fast if we know the request is likely to fail anyway:
 
@@ -232,7 +230,7 @@ if (this.state.status === CircuitBreakerStatus.OPEN) {
 
 A log is added to let our monitoring team know that a circuit breaker was opened, and a `500 INTERNAL SERVER ERROR` response is returned to the client.
 
-### Control levels goes below threshold, circuit moves to half-open
+#### Control levels goes below threshold, circuit moves to half-open
 
 After a while, the bucket will stop leaking, the `counter` for the given circuit breaker will be back below the threshold, and whenever it happens, the bucket process itself will notify this fact:
 
@@ -267,7 +265,7 @@ class ExpressCircuitBreaker extends EventEmitter implements CircuitBreaker {
 
 In the `HALF_OPEN` state, the next response decides wether new requests will be allowed to flow though again (if `statusCode: 200`) or will continue being denied (if `statusCode: 500`).
 
-## The Leaky Bucket
+### The Leaky Bucket
 
 The `LeakyBucket` class controls the lifecycle of the counters for a given `subscriptionId`. As mentioned above, this class is used by a process manager that runs as a child-process and communicates to the main process whenever needed. The `LeakyBucket` interface is pretty straightforward:
 
@@ -360,11 +358,13 @@ handleTick(): void {
 }
 ```
 
-## Faking a remote service having trouble
+### Faking a remote service having trouble
 
 To fake a `TransactionHistoryService` under trouble, we're going to use our [TransactionHistoryService](src/app/services/transaction-history/fake/index.ts). This fake returns a failure in every fourth response if the circuit breaker status is not `OPEN`. With this, we can simulate "random" failures from a remote service and can test that our circuit breaker is behaving as expected.
 
-## Taking the kid to the playground
+### Application state
+
+### Taking the kid to the playground
 
 To "manually" test our circuit breaker, we are going to use `loadtest`. With that, we will simply send 10 requests per second targeting the transaction history endpoint, which will eventually cause the fake service mentioned above to fail often enough to trip the circuit breaker:
 
