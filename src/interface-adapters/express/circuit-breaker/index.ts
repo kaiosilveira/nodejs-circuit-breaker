@@ -12,6 +12,7 @@ import CircuitBreakerClosedState from '../../../app/stability/circuit-breaker/st
 import CircuitBreakerHalfOpenState from '../../../app/stability/circuit-breaker/state/half-open';
 import CircuitBreakerOpenState from '../../../app/stability/circuit-breaker/state/open';
 import { CircuitBreakerStatus } from '../../../app/stability/circuit-breaker/status';
+import * as httpCodes from '../http/status-codes';
 
 export type ExpressCircuitBreakerConfig = { resourceName: string; threshold: number };
 export type ExpressCircuitBreakerProps = {
@@ -65,15 +66,17 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
   monitor(_: Request, res: Response, next: Function): void | Response {
     if (this.state.status === CircuitBreakerStatus.OPEN) {
       this.logger.info({ msg: 'Call refused from circuit breaker', status: this.state.status });
-      return res.status(500).json({ msg: 'Call refused from circuit breaker' });
+      return res
+        .status(httpCodes.INTERNAL_SERVER_ERROR)
+        .json({ msg: 'Call refused from circuit breaker' });
     }
 
     res.on('finish', () => {
       switch (res.statusCode) {
-        case 200:
+        case httpCodes.OK:
           this.state.handleOkResponse();
           break;
-        case 500:
+        case httpCodes.INTERNAL_SERVER_ERROR:
           this.state.handleInternalServerErrorResponse();
           break;
         default:
