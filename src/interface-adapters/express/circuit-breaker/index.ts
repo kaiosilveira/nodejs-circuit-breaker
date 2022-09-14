@@ -6,6 +6,7 @@ import {
   LeakyBucketMessage,
 } from '../../../app/infra/leaky-bucket/messages';
 import ILogger from '../../../app/infra/logger';
+import ApplicationCache from '../../../app/reliability/cache';
 import CircuitBreaker, { CircuitBreakerEvents } from '../../../app/stability/circuit-breaker';
 import CircuitBreakerState from '../../../app/stability/circuit-breaker/state';
 import CircuitBreakerClosedState from '../../../app/stability/circuit-breaker/state/closed';
@@ -19,6 +20,7 @@ export type ExpressCircuitBreakerProps = {
   bucket: ChildProcess;
   logger: ILogger;
   config: ExpressCircuitBreakerConfig;
+  cache?: ApplicationCache;
 };
 
 export type ExpressCircuitBreakerDescription = {
@@ -33,12 +35,14 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
   bucket: ChildProcess;
   config: ExpressCircuitBreakerConfig;
   state: CircuitBreakerState;
+  cache?: ApplicationCache;
 
-  constructor({ bucket, logger, config }: ExpressCircuitBreakerProps) {
+  constructor({ bucket, logger, config, cache }: ExpressCircuitBreakerProps) {
     super();
     this.config = config;
     this.bucket = bucket;
     this.logger = logger;
+    this.cache = cache;
     this.subscriptionId = `${this.config.resourceName}-circuit-breaker`;
     this.state = new CircuitBreakerClosedState({ circuitBreaker: this, logger: this.logger });
 
@@ -63,7 +67,7 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
     return this.subscriptionId;
   }
 
-  monitor(_: Request, res: Response, next: Function): void | Response {
+  monitor(req: Request, res: Response, next: Function): void | Response {
     if (this.state.status === CircuitBreakerStatus.OPEN) {
       this.logger.info({ msg: 'Call refused from circuit breaker', status: this.state.status });
       return res
@@ -74,6 +78,8 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
     res.on('finish', () => {
       switch (res.statusCode) {
         case httpCodes.OK:
+          const userId = req.headers['x-user-id']?.toString();
+          if (userId) this.cache?.set(userId, JSON.stringify(res.body));
           this.state.handleOkResponse();
           break;
         case httpCodes.INTERNAL_SERVER_ERROR:
