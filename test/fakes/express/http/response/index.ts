@@ -5,10 +5,12 @@ export default class FakeExpressResponse extends EventEmitter {
   body: object;
   callbacks: Object;
 
-  constructor({ statusCode }: { statusCode: number } = { statusCode: 200 }) {
+  constructor(
+    { statusCode, body = {} }: { statusCode: number; body?: any } = { statusCode: 200 }
+  ) {
     super();
     this.statusCode = statusCode;
-    this.body = {};
+    this.body = body;
     this.callbacks = {};
   }
 
