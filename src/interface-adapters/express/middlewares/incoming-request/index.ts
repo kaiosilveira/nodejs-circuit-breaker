@@ -18,6 +18,7 @@ class IncomingRequestMiddleware {
       reqStartedAt: +new Date(),
       method: req.method,
       url: req.url,
+      userId: req.headers['x-user-id'],
     };
 
     req.context = context;
