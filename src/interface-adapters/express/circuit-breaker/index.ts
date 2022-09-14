@@ -79,7 +79,11 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
       switch (res.statusCode) {
         case httpCodes.OK:
           const userId = req.headers['x-user-id']?.toString();
-          if (userId) this.cache?.set(userId, JSON.stringify(res.body));
+          if (userId && this.cache) {
+            this.cache.set(userId, JSON.stringify(res.body));
+            this.logger.info({ msg: 'saving last successful response to the cache' });
+          }
+
           this.state.handleOkResponse();
           break;
         case httpCodes.INTERNAL_SERVER_ERROR:
