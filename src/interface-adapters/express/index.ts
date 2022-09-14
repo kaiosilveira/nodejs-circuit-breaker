@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import Express from 'express';
 import ApplicationState from '../../app/infra/application-state';
 import ILogger from '../../app/infra/logger';
+import InMemoryCache from '../../external/cache/in-memory';
 import IncomingRequestMiddleware from './middlewares/incoming-request';
 import OutgoingResponseMiddleware from './middlewares/outgoing-response';
 import AdminResource from './resources/admin';
@@ -27,7 +28,8 @@ export default class ExpressAppFactory {
     const adminResource = AdminResource.build({ applicationState, router: Express.Router() });
     const transactionHistoryResource = TransactionHistoryResource.build({
       router: Express.Router(),
-      bucket: bucket,
+      cache: new InMemoryCache(),
+      bucket,
       logger,
       applicationState,
     });
