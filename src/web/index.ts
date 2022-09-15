@@ -12,4 +12,6 @@ const LeakyBucket = ChildProcess.fork('./src/app/infra/leaky-bucket');
 
 const expressApp = ExpressAppFactory.createApp({ logger, applicationState, bucket: LeakyBucket });
 
-http.createServer(expressApp).listen(PORT, () => console.log(`Server listening at ${PORT} 🚀`));
+http
+  .createServer(expressApp)
+  .listen(PORT, () => logger.info({ msg: `Server listening at ${PORT} 🚀` }));
