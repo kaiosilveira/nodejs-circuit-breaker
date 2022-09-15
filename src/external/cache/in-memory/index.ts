@@ -7,6 +7,10 @@ export default class InMemoryCache implements ApplicationCache {
     this._REGISTRY = {};
   }
 
+  has(key: string): boolean {
+    return Object.keys(this._REGISTRY).includes(key);
+  }
+
   set(key: string, value: string): void {
     this._REGISTRY[key] = value;
   }
