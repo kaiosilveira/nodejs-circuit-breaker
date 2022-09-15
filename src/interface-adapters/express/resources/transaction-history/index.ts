@@ -33,6 +33,7 @@ export default class TransactionHistoryResource {
     applicationState.registerCircuitBreaker(transactionHistoryCircuitBreaker);
 
     const transactionHistoryResolver = new TransactionHistoryController({
+      cache,
       logger: logger.child({ defaultMeta: { object: 'ExpressCircuitBreaker' } }),
       transactionHistoryService: new FakeTransactionHistoryService({ applicationState }),
     });
