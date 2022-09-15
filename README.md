@@ -381,7 +381,7 @@ interface ApplicationState {
 }
 ```
 
-and an [in-memory representation](./src/app/infra/application-state/in-memory/index.ts) was implemented.
+and an [in-memory representation](./src/app/infra/application-state/in-memory/index.ts) was provided.
 
 This implementation acts as a middleman between the `admin` resource and the `CircuitBreaker`s themselves, allowing for HTTP requests to modify the current state of any circuit breaker.
 
