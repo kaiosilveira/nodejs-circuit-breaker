@@ -70,9 +70,11 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
   monitor(req: Request, res: Response, next: Function): void | Response {
     if (this.state.status === CircuitBreakerStatus.OPEN) {
       const userId = req.headers['x-user-id']?.toString();
-      if (userId && this.cache && this.cache.has(userId)) {
-        const rawResponse = this.cache.get(userId);
+      const cacheKey = `transaction-history:${userId}`;
+      if (userId && this.cache && this.cache.has(cacheKey)) {
+        const rawResponse = this.cache.get(cacheKey);
         const cachedResponse = rawResponse ? JSON.parse(rawResponse) : undefined;
+        this.logger.info({ msg: 'Resolving request using cached data while in OPEN state' });
         if (cachedResponse) return res.status(200).json({ ...cachedResponse, fromCache: true });
       }
 
