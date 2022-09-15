@@ -2,18 +2,7 @@
 
 [![Continuous Integration](https://github.com/kaiosilveira/nodejs-circuit-breaker/actions/workflows/ci.yml/badge.svg)](https://github.com/kaiosilveira/nodejs-circuit-breaker/actions/workflows/ci.yml)
 
-🚧 **This repository is a work in progress. It's being constantly updated, so stay tuned if you're interested!** 🚧
-
 This repository is an example implementation of a Circuit Breaker, as described in the "Release it" book, by Michael T. Nygard.
-
-## Roadmap
-
-Remaining things to implement:
-
-- fallback to last cached result in case the transaction-history-service is down
-- document fake services
-- document load tests
-- document `ApplicationState`
 
 ## Hypothetical domain
 
@@ -109,7 +98,6 @@ In our particular case, an [ExpressCircuitBreaker](./src/circuit-breaker/express
 At bootstrap time, the circuit breaker sets its status to closed:
 
 ```typescript
-
 constructor({ bucket, logger, config }: ExpressCircuitBreakerProps) {
     // more initialization code here
     this.state = new CircuitBreakerClosedState({ circuitBreaker: this, logger: this.logger });
@@ -215,7 +203,11 @@ class ExpressCircuitBreaker extends EventEmitter implements CircuitBreaker {
 
 #### External service is misbehaving, circuit is opened
 
-When the circuit is `OPEN`, all requests will be blocked and the endpoint will fail fast.
+When the circuit is `OPEN`, all incoming requests which would activate the problematic remote service will be rejected, unless there is a cache entry for the user requesting the data.
+
+##### Cache entry available
+
+In this case, the circuit breaker will return a potentially outdated result, but which will still allow users to see something on the UI. to let users know about the possible discrepancy between what's in the screen and what is the current state of the system, a flag `fromCache: true` is provided.
 
 ##### Failing fast
 
@@ -393,23 +385,19 @@ To "manually" test our circuit breaker, we are going to use `loadtest`. With tha
 loadtest --rps 10 'http://localhost:3000/transaction-history/mine'
 ```
 
-We can see in the logs that the circuit breaker opens after some failed requests, then it starts to refuse requests and, after a while, it recovers to `HALF_OPEN`, allowing new requests to throw trough:
+We can see in the logs that the circuit breaker opens after some failed requests, then it starts to resolve requests from cache and, after a while, it recovers to `HALF_OPEN`, allowing new requests to flow trough:
 
 ```console
-{ msg: 'Call refused from circuit breaker', status: 'open' }
-{ msg: 'Call refused from circuit breaker', status: 'open' }
-{ msg: 'Threshold restored. Moving circuit to half-open.', status: 'half_open' }
-{ msg: 'Successful response while in a HALF_OPEN state. Closing the circuit.', status: 'half_open' }
-{ msg: 'Successful response', status: 'closed' }
-{ msg: 'Successful response', status: 'closed' }
-{ msg: 'Failed to execute' }
-{ msg: 'Threshold violated. Opening circuit.' }
-{ msg: 'Call refused from circuit breaker', status: 'open' }
-{ msg: 'Call refused from circuit breaker', status: 'open' }
-{ msg: 'Call refused from circuit breaker', status: 'open' }
-{ msg: 'Call refused from circuit breaker', status: 'open' }
-{ msg: 'Call refused from circuit breaker', status: 'open' }
-{ msg: 'Call refused from circuit breaker', status: 'open' }
-{ msg: 'Threshold restored. Moving circuit to half-open.', status: 'half_open' }
-{ msg: 'Successful response while in a HALF_OPEN state. Closing the circuit.', status: 'half_open' }
+info: {"msg":"Successful response","status":"closed"} {"defaultMeta":{"object":"ExpressCircuitBreaker"}}
+info: {"msg":"Successful response","status":"closed"} {"defaultMeta":{"object":"ExpressCircuitBreaker"}}
+error: {"msg":"Failed to execute"} {"defaultMeta":{"object":"ExpressCircuitBreaker"}}
+info: {"msg":"Threshold violated. Opening circuit."} {"defaultMeta":{"object":"ExpressCircuitBreaker"}}
+info: {"msg":"Resolving request using cached data while in OPEN state"} {"defaultMeta":{"object":"ExpressCircuitBreaker"}}
+info: {"msg":"Resolving request using cached data while in OPEN state"} {"defaultMeta":{"object":"ExpressCircuitBreaker"}}
+info: {"msg":"Resolving request using cached data while in OPEN state"} {"defaultMeta":{"object":"ExpressCircuitBreaker"}}
+info: {"msg":"Resolving request using cached data while in OPEN state"} {"defaultMeta":{"object":"ExpressCircuitBreaker"}}
+info: {"msg":"Resolving request using cached data while in OPEN state"} {"defaultMeta":{"object":"ExpressCircuitBreaker"}}
+info: {"msg":"Resolving request using cached data while in OPEN state"} {"defaultMeta":{"object":"ExpressCircuitBreaker"}}
+info: {"msg":"Threshold restored. Moving circuit to half-open.","status":"half_open"} {"defaultMeta":{"object":"ExpressCircuitBreaker"}}
+info: {"msg":"Successful response while in a HALF_OPEN state. Closing the circuit.","status":"half_open"} {"defaultMeta":{"object":"ExpressCircuitBreaker"}}
 ```
