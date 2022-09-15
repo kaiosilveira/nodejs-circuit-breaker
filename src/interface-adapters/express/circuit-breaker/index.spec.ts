@@ -62,7 +62,7 @@ describe('CircuitBreaker', () => {
       jest.restoreAllMocks();
     });
 
-    it('should return INTERNAL_SERVER_ERROR 500 if state is OPEN', () => {
+    it('should return INTERNAL_SERVER_ERROR 500 if state is OPEN and there are no cache entry', () => {
       const spyOnLoggerInfo = jest.spyOn(logger, 'info');
 
       const circuitBreaker = new ExpressCircuitBreaker({
@@ -88,9 +88,36 @@ describe('CircuitBreaker', () => {
 
       expect(spyOnLoggerInfo).toHaveBeenCalledTimes(1);
       expect(spyOnLoggerInfo).toHaveBeenCalledWith({
-        msg: 'Call refused from circuit breaker',
+        msg: 'Call refused by circuit breaker',
         status: CircuitBreakerStatus.OPEN,
       });
+    });
+
+    it('should return the last cached response if state is OPEN and there is data in the cache for the given user', () => {
+      const userId = 'abc';
+      const cache = new FakeApplicationCache();
+      const cachedResponse = [{ amount: 100, date: new Date() }];
+
+      jest.spyOn(cache, 'get').mockReturnValue(JSON.stringify(cachedResponse));
+      jest.spyOn(cache, 'has').mockReturnValue(true);
+
+      const circuitBreaker = new ExpressCircuitBreaker({
+        config: { resourceName: 'transaction-history', threshold },
+        cache,
+        bucket,
+        logger,
+      });
+
+      circuitBreaker.open();
+
+      const req = new FakeExpressRequest({ headers: { 'x-user-id': userId } }) as Request;
+      const res = new FakeExpressResponse() as unknown as Response;
+      const next = jest.fn();
+
+      const result = circuitBreaker.monitor(req, res, next) as Response;
+      res.emit('finish');
+
+      expect(result.status).toEqual(200);
     });
 
     it('should register success 200 OK response when the state is CLOSED', () => {
@@ -116,34 +143,6 @@ describe('CircuitBreaker', () => {
         msg: 'Successful response',
         status: CircuitBreakerStatus.CLOSED,
       });
-    });
-
-    it('should save the last successful response to the cache', () => {
-      const userId = 'abc-def';
-      const payload = [{ amount: 100, date: new Date() }];
-      const cache = new FakeApplicationCache();
-
-      jest.spyOn(cache, 'set').mockImplementation(jest.fn());
-
-      const circuitBreaker = new ExpressCircuitBreaker({
-        config: { resourceName: 'transaction-history', threshold },
-        bucket,
-        logger,
-        cache,
-      });
-
-      circuitBreaker.close();
-
-      const req = { headers: { 'x-user-id': userId } } as unknown as Request;
-      const res = new FakeExpressResponse({
-        statusCode: 200,
-        body: payload,
-      }) as unknown as Response;
-
-      circuitBreaker.monitor(req, res, next) as Response;
-      res.emit('finish');
-
-      expect(cache.set).toHaveBeenCalledWith(userId, JSON.stringify(payload));
     });
 
     it('should close the circuit again if response has status 200 OK and circuit is at HALF_OPEN', () => {

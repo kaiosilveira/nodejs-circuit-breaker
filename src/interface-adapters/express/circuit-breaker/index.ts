@@ -69,21 +69,22 @@ export default class ExpressCircuitBreaker extends EventEmitter implements Circu
 
   monitor(req: Request, res: Response, next: Function): void | Response {
     if (this.state.status === CircuitBreakerStatus.OPEN) {
-      this.logger.info({ msg: 'Call refused from circuit breaker', status: this.state.status });
+      const userId = req.headers['x-user-id']?.toString();
+      if (userId && this.cache && this.cache.has(userId)) {
+        const rawResponse = this.cache.get(userId);
+        const cachedResponse = rawResponse ? JSON.parse(rawResponse) : undefined;
+        if (cachedResponse) return res.status(200).json({ ...cachedResponse, fromCache: true });
+      }
+
+      this.logger.info({ msg: 'Call refused by circuit breaker', status: this.state.status });
       return res
         .status(httpCodes.INTERNAL_SERVER_ERROR)
-        .json({ msg: 'Call refused from circuit breaker' });
+        .json({ msg: 'Call refused by circuit breaker' });
     }
 
     res.on('finish', () => {
       switch (res.statusCode) {
         case httpCodes.OK:
-          const userId = req.headers['x-user-id']?.toString();
-          if (userId && this.cache) {
-            this.cache.set(userId, JSON.stringify(res.body));
-            this.logger.info({ msg: 'saving last successful response to the cache' });
-          }
-
           this.state.handleOkResponse();
           break;
         case httpCodes.INTERNAL_SERVER_ERROR:
