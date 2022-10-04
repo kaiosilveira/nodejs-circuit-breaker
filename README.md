@@ -1,8 +1,10 @@
-# nodejs-circuit-breaker
-
 [![Continuous Integration](https://github.com/kaiosilveira/nodejs-circuit-breaker/actions/workflows/ci.yml/badge.svg)](https://github.com/kaiosilveira/nodejs-circuit-breaker/actions/workflows/ci.yml)
 
-This repository is an example implementation of a Circuit Breaker, as described in the "Release it" book, by Michael T. Nygard.
+This repository is an example implementation in NodeJS of a Circuit Breaker as described in "Release it! - Nygard" and is part of my Stability Pattern Series. Check out [kaiosilveira/stability-patterns](https://github.com/kaiosilveira/stability-patterns) for more details.
+
+# Circuit breaker
+
+This repository is an example implementation in NodeJS of a Circuit Breaker, as described in the "Release it" book, by Michael T. Nygard.
 
 ## Hypothetical domain
 
