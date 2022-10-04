@@ -4,7 +4,15 @@ This repository is an example implementation in NodeJS of a Circuit Breaker as d
 
 # Circuit breaker
 
-This repository is an example implementation in NodeJS of a Circuit Breaker, as described in the "Release it" book, by Michael T. Nygard.
+In electrical engineering there's a concept of "circuit breaker", a mechanism to stop energy of flowing through and potentially burning down all the system if something goes wrong. Its equivalent in the software engineering world mimics this mechanism and creates a parallel between energy and requests. As Nygard mentions in his book: requests are the energy of our system, and we need a way of protecting the whole system of being completely burned down.
+
+Circuit breakers contains three states:
+
+- `CLOSED`: Requests flow normally through
+- `OPEN`: Requests do not flow through and operation is refused
+- `HALF_OPEN`: Next request is evaluated by the circuit breaker code, if it succeeds, the circuit state is changed to `CLOSED`, otherwise it goes back to `OPEN`
+
+Find below the hypothetical domain used to give an example of this pattern in action, alongside all of its technical details.
 
 ## Hypothetical domain
 
