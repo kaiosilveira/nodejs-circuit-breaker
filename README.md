@@ -1,6 +1,6 @@
 [![Continuous Integration](https://github.com/kaiosilveira/nodejs-circuit-breaker/actions/workflows/ci.yml/badge.svg)](https://github.com/kaiosilveira/nodejs-circuit-breaker/actions/workflows/ci.yml)
 
-_This repository is an example implementation in NodeJS of a Circuit Breaker as described in "Release it! - Nygard" and is part of my Stability Pattern Series. Check out [kaiosilveira/stability-patterns](https://github.com/kaiosilveira/stability-patterns) for more details._
+_This repository is an example implementation in NodeJS of a Circuit Breaker as described in "Release it! - Nygard" and is part of my Stability Patterns Series. Check out [kaiosilveira/stability-patterns](https://github.com/kaiosilveira/stability-patterns) for more details._
 
 # Circuit breaker
 
